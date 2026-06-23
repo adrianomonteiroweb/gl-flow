@@ -114,6 +114,33 @@ export async function updateLeadStep(leadId: string, stepId: string, statusId?: 
   }
 }
 
+export async function updateLeadStepBySlug(leadId: string, stepSlug: string, statusSlug?: string) {
+  try {
+    const lead = await LeadRepository.findById(leadId);
+
+    if (!lead) {
+      return { success: false, error: 'Lead não encontrado' };
+    }
+
+    if (!lead.workspace_id) {
+      return { success: false, error: 'Lead sem workspace' };
+    }
+
+    const step = await StepRepository.findBySlug(lead.workspace_id, stepSlug);
+
+    if (!step) {
+      return { success: false, error: 'Etapa inválida' };
+    }
+
+    const status = statusSlug ? await StatusRepository.findBySlug(lead.workspace_id, statusSlug) : null;
+
+    return await updateLeadStep(leadId, step.id, status?.id);
+  } catch (error: any) {
+    console.error('Error updating lead step by slug:', error);
+    return { success: false, error: error?.message || 'Erro ao atualizar etapa' };
+  }
+}
+
 export async function updateLeadInfo(id: string, data: UpdateLeadInfoParams) {
   try {
     const me = await getMe();

@@ -2,14 +2,13 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams as useNextSearchParams } from 'next/navigation';
-import { Mail, Phone, Info, History, User, MapPinIcon, FileText, ClipboardCheck } from 'lucide-react';
+import { Mail, Phone, Info, History, User, MapPinIcon, ClipboardCheck } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@workspace/ui/components/avatar';
 import { ScrollArea } from '@workspace/ui/components/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@workspace/ui/components/tooltip';
 import { cn } from '@workspace/ui/lib/utils';
-import { LeadProposalsSection } from '@/components/proposal-templates/lead/lead-proposals-section';
 import { AddressData } from '@/repositories/types';
 import { getLeadTasks } from '@/actions/tasks';
 import { getLeadTaskAlert, leadTaskAlertConfig, type TaskLike } from '@/utils/task-status';
@@ -33,7 +32,7 @@ interface LeadDetailsContentProps {
   onLeadChange?: (change: LeadFieldChange) => void;
 }
 
-const VALID_TABS = ['about', 'share', 'info', 'history', 'tasks', 'proposals'];
+const VALID_TABS = ['about', 'share', 'info', 'history', 'tasks'];
 
 export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultTab, onLeadChange }: LeadDetailsContentProps) => {
   const initialTab = defaultTab && VALID_TABS.includes(defaultTab) ? defaultTab : 'about';
@@ -123,7 +122,7 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TooltipProvider delayDuration={200}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="about">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -189,18 +188,6 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
                 </TooltipContent>
               </Tooltip>
             </TabsTrigger>
-            <TabsTrigger value="proposals">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
-                    <FileText className="h-5 w-5" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs">
-                  Propostas
-                </TooltipContent>
-              </Tooltip>
-            </TabsTrigger>
           </TabsList>
         </TooltipProvider>
 
@@ -254,10 +241,6 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
 
         <TabsContent value="tasks" className="mt-6">
           <LeadTasksSection leadId={leadData.id} onTasksChanged={handleTasksChanged} />
-        </TabsContent>
-
-        <TabsContent value="proposals" className="mt-6">
-          <LeadProposalsSection leadId={leadData?.id} chatId={chatId} lead={leadData} />
         </TabsContent>
       </Tabs>
     </div>

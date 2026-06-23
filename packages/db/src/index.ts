@@ -7,3 +7,5 @@ export * from './repositories/PipelineRepository';
 export * from './repositories/StepRepository';
 export * from './repositories/StatusRepository';
 export * from './repositories/LeadActivityRepository';
+export * from './repositories/TaskRepository';
+export * from './repositories/LossReasonRepository';

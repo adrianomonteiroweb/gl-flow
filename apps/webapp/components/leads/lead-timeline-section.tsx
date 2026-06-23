@@ -57,6 +57,8 @@ const ACTIVITY_CONFIG: Record<LeadActivity['type'], { icon: LucideIcon; label: s
   assignee_changed: { icon: UserCog, label: 'Responsável alterado', tone: 'primary' },
   lead_taken: { icon: UserCheck, label: 'Lead assumido', tone: 'success' },
   lead_reactivated: { icon: RotateCcw, label: 'Cliente reativado', tone: 'success' },
+  lead_won: { icon: Trophy, label: 'Negociação ganha', tone: 'success' },
+  lead_closed: { icon: Lock, label: 'Negociação perdida', tone: 'danger' },
   chat_won: { icon: Trophy, label: 'Negociação ganha', tone: 'success' },
   chat_closed: { icon: Lock, label: 'Atendimento encerrado', tone: 'muted' },
   task_created: { icon: ClipboardList, label: 'Tarefa criada', tone: 'primary' },

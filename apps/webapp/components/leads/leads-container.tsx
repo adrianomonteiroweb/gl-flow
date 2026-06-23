@@ -8,10 +8,9 @@ import { Button } from '@workspace/ui/components/button';
 import { Toggle } from '@workspace/ui/components/toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@workspace/ui/components/select';
 import { cn } from '@workspace/ui/lib/utils';
-import { getLeads } from '@/actions/leads';
+import { getLeads, updateLeadStep } from '@/actions/leads';
 import { getAvailablePipelines } from '@/actions/pipelines';
 import { useSearchParams } from '@/hooks/use-search-params';
-import { updateChatStep } from '@/actions/chats';
 import type { Pipeline } from '@/components/pipelines/types';
 import { useLeadsSSE } from '@/hooks/use-leads-sse';
 import { useSessionContext } from '@/contexts/session';
@@ -224,7 +223,7 @@ export function LeadsContainer() {
         return;
       }
 
-      const result = await updateChatStep(lead.chat.id, newStep, newStatus);
+      const result = await updateLeadStep(leadId, newStep, newStatus);
 
       if (result.success) {
         toast.success('Etapa atualizada com sucesso');
@@ -245,7 +244,7 @@ export function LeadsContainer() {
     }
 
     try {
-      const result = await updateChatStep(pendingLostChange.chatId, pendingLostChange.step, pendingLostChange.status);
+      const result = await updateLeadStep(pendingLostChange.leadId, pendingLostChange.step, pendingLostChange.status);
 
       if (result.success) {
         toast.success('Negociação marcada como perdida');
@@ -360,7 +359,7 @@ export function LeadsContainer() {
       {pendingLostChange && (
         <LossReasonModal
           open={!!pendingLostChange}
-          onOpenChange={open => {
+          onOpenChange={(open: boolean) => {
             if (!open) {
               handleLostCancel();
             }

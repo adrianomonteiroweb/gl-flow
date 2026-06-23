@@ -8,9 +8,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@workspace/ui/component
 import { getStatusLabel } from '@/utils/status-utils';
 import { getLeadTaskAlert, leadTaskAlertConfig, type LeadTaskAlertIcon } from '@/utils/task-status';
 import { LeadAssigneeControl } from '@/components/leads/assignee-control';
-import { Phone, ChevronLeft, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { Phone, ChevronLeft, ChevronDown, ChevronRight, Check, type LucideIcon } from 'lucide-react';
 
-const alertIconMap: Record<LeadTaskAlertIcon, React.ElementType> = {
+const alertIconMap: Record<LeadTaskAlertIcon, LucideIcon> = {
   'chevron-left': ChevronLeft,
   'chevron-down': ChevronDown,
   'chevron-right': ChevronRight,

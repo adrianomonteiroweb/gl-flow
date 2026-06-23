@@ -16,7 +16,14 @@ export type LeadActivityType =
   | 'lead_won'
   | 'lead_closed'
   | 'lead_reactivated'
-  | 'note_added';
+  | 'note_added'
+  | 'chat_won'
+  | 'chat_closed'
+  | 'task_created'
+  | 'task_completed'
+  | 'task_reopened'
+  | 'task_deleted'
+  | 'proposal_created';
 
 export type LeadActorType = 'user' | 'system';
 

@@ -8,6 +8,13 @@
       "when": 1782235785161,
       "tag": "0000_bizarre_robbie_robertson",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782239416106,
+      "tag": "0001_rare_talos",
+      "breakpoints": true
     }
   ]
 }

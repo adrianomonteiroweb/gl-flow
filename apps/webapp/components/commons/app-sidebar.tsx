@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type * as React from 'react';
-import { InboxIcon, UsersRoundIcon, SettingsIcon } from 'lucide-react';
+import { LayoutDashboardIcon, InboxIcon, UsersRoundIcon, SettingsIcon } from 'lucide-react';
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@workspace/ui/components/sidebar';
 import { Separator } from '@workspace/ui/components/separator';
@@ -16,6 +16,11 @@ import { AppLogo } from './logo';
 
 const data = {
   navMain: [
+    {
+      title: 'Dashboard',
+      icon: LayoutDashboardIcon,
+      url: '/dashboard',
+    },
     {
       title: 'Pipeline',
       icon: InboxIcon,

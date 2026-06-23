@@ -315,9 +315,9 @@ export const deletePipeline = async (id: string) => {
           .limit(1);
 
         await tx
-          .update(chats_table)
-          .set({ pipeline_id: fallback.id, ...(firstStep ? { step: firstStep.id } : {}), updated_at: new Date() })
-          .where(and(eq(chats_table.workspace_id, auth.workspaceId), eq(chats_table.pipeline_id, id)));
+          .update(leads_table)
+          .set({ pipeline_id: fallback.id, ...(firstStep ? { step_id: firstStep.id } : {}), updated_at: new Date() })
+          .where(and(eq(leads_table.workspace_id, auth.workspaceId), eq(leads_table.pipeline_id, id)));
       }
 
       await tx.update(pipelines_table).set({ deleted_at: new Date().toISOString(), updated_at: new Date() }).where(eq(pipelines_table.id, id));
@@ -487,7 +487,7 @@ export const deleteStage = async (id: string, options?: { targetStepId?: string;
 
     const stepPipelineId = step.pipeline_id;
 
-    const chatCount = await countChatsByStep(auth.workspaceId, id);
+    const chatCount = await countLeadsByStep(auth.workspaceId, id);
     const target = options?.targetStepId?.trim();
     const targetName = options?.targetStepName?.trim();
 
@@ -533,9 +533,9 @@ export const deleteStage = async (id: string, options?: { targetStepId?: string;
 
       if (targetId && chatCount > 0) {
         await tx
-          .update(chats_table)
-          .set({ step: targetId, updated_at: new Date() })
-          .where(and(eq(chats_table.workspace_id, auth.workspaceId), eq(chats_table.step, id)));
+          .update(leads_table)
+          .set({ step_id: targetId, updated_at: new Date() })
+          .where(and(eq(leads_table.workspace_id, auth.workspaceId), eq(leads_table.step_id, id)));
       }
 
       await tx.update(steps_table).set({ deleted_at: new Date().toISOString(), updated_at: new Date() }).where(eq(steps_table.id, id));
@@ -711,7 +711,7 @@ export const removeStatusFromStage = async (stepId: string, statusId: string, op
       return { success: true as const, data: null };
     }
 
-    const chatCount = await countChatsByStatus(auth.workspaceId, statusId);
+    const chatCount = await countLeadsByStatus(auth.workspaceId, statusId);
     const target = options?.targetStatusId?.trim();
     const targetName = options?.targetStatusName?.trim();
 
@@ -741,9 +741,9 @@ export const removeStatusFromStage = async (stepId: string, statusId: string, op
 
       if (targetId && chatCount > 0) {
         await tx
-          .update(chats_table)
-          .set({ status: targetId, updated_at: new Date() })
-          .where(and(eq(chats_table.workspace_id, auth.workspaceId), eq(chats_table.status, statusId)));
+          .update(leads_table)
+          .set({ status_id: targetId, updated_at: new Date() })
+          .where(and(eq(leads_table.workspace_id, auth.workspaceId), eq(leads_table.status_id, statusId)));
       }
 
       await tx.delete(step_statuses).where(eq(step_statuses.status_id, statusId));

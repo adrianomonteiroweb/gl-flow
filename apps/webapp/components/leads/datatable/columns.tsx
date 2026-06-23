@@ -1,13 +1,13 @@
 'use client';
 
-import { ChevronLeft, ChevronDown, ChevronRight, Check, CircleDot, ListChecks } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronRight, Check, CircleDot, ListChecks, type LucideIcon } from 'lucide-react';
 
 import { DateFormatter } from '@workspace/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@workspace/ui/components/tooltip';
 import { getStatusLabel, getStepLabel } from '@/utils/status-utils';
 import { getLeadTaskAlert, leadTaskAlertConfig, type LeadTaskAlertIcon } from '@/utils/task-status';
 
-const alertIconMap: Record<LeadTaskAlertIcon, React.ElementType> = {
+const alertIconMap: Record<LeadTaskAlertIcon, LucideIcon> = {
   'chevron-left': ChevronLeft,
   'chevron-down': ChevronDown,
   'chevron-right': ChevronRight,

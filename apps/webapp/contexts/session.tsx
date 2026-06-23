@@ -62,7 +62,7 @@ export function SessionProvider({ children }: Props) {
     }
 
     if (user && pathname === '/login') {
-      router.replace('/pipelines');
+      router.replace('/dashboard');
     }
   }, [mounted, loading, user, pathname, router]);
 
@@ -72,7 +72,7 @@ export function SessionProvider({ children }: Props) {
 
       if (status === 200 || status === 201) {
         setUser(user);
-        router.push('/pipelines');
+        router.push('/dashboard');
       }
 
       return { status };

@@ -247,3 +247,70 @@ export const lead_activities_table = schema.table(
   },
   table => [index('idx_lead_activities_lead').on(table.lead_id), index('idx_lead_activities_ws_created').on(table.workspace_id, table.created_at)]
 );
+
+// ─── Tasks (per-lead follow-up tasks with a due date) ─────────────────────────
+export const tasks_table = schema.table(
+  'tasks',
+  {
+    id: varchar('id', { length: 255 })
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+
+    workspace_id: varchar('workspace_id', { length: 255 })
+      .notNull()
+      .references(() => workspaces_table.id),
+    lead_id: varchar('lead_id', { length: 255 })
+      .notNull()
+      .references(() => leads_table.id),
+    assignee_id: varchar('assignee_id', { length: 255 }).references(() => users_table.id),
+
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
+
+    due_date: timestamp('due_date', { withTimezone: true, mode: 'string' }).notNull(),
+    completed_at: timestamp('completed_at', { withTimezone: true, mode: 'string' }),
+
+    payload: jsonb('payload'),
+    metadata: jsonb('metadata'),
+
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
+  },
+  table => [
+    index('idx_tasks_lead').on(table.lead_id),
+    index('idx_tasks_workspace').on(table.workspace_id),
+    index('idx_tasks_assignee').on(table.assignee_id),
+  ]
+);
+
+// ─── Loss reasons (configurable reasons a negotiation was lost) ───────────────
+export const loss_reasons_table = schema.table(
+  'loss_reasons',
+  {
+    id: varchar('id', { length: 255 })
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+
+    workspace_id: varchar('workspace_id', { length: 255 })
+      .notNull()
+      .references(() => workspaces_table.id),
+
+    name: varchar('name', { length: 255 }).notNull(),
+    sort_order: integer('sort_order').default(0).notNull(),
+    is_active: boolean('is_active').default(true).notNull(),
+
+    payload: jsonb('payload'),
+    metadata: jsonb('metadata'),
+
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
+  },
+  table => [
+    index('idx_loss_reasons_workspace').on(table.workspace_id),
+    uniqueIndex('uq_loss_reason_workspace_name')
+      .on(table.workspace_id, table.name)
+      .where(sql`deleted_at IS NULL`),
+  ]
+);

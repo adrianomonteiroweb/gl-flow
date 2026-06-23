@@ -14,8 +14,7 @@ import {
   AlertDialogTitle,
 } from '@workspace/ui/components/alert-dialog';
 import { LossReasonModal } from '@/components/loss-reasons/loss-reason-modal';
-import { updateLeadLossReason } from '@/actions/leads';
-import { updateChatStepBySlug } from '@/actions/chats';
+import { updateLeadLossReason, updateLeadStepBySlug } from '@/actions/leads';
 import { toast } from 'sonner';
 
 interface LeadDetailedInfoProps {
@@ -57,9 +56,9 @@ export const LeadDetailedInfo = ({ leadId, chatId, lossReason, onSuccess }: Lead
 
     if (chatId) {
       try {
-        await updateChatStepBySlug(chatId, 'closed', 'negociacao_perdida');
+        await updateLeadStepBySlug(leadId, 'closed', 'negociacao_perdida');
       } catch {
-        console.error('Error updating chat step');
+        console.error('Error updating lead step');
       }
     }
 
@@ -81,7 +80,7 @@ export const LeadDetailedInfo = ({ leadId, chatId, lossReason, onSuccess }: Lead
       }
 
       if (chatId) {
-        await updateChatStepBySlug(chatId, 'negotiation', 'em_atendimento');
+        await updateLeadStepBySlug(leadId, 'negotiation', 'em_atendimento');
       }
 
       toast.success('Motivo de perda removido');

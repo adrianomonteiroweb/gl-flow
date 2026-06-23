@@ -1,5 +1,5 @@
 {
-  "id": "c45d7bf0-c70e-4f8e-80c1-f5bfa0cadf2f",
+  "id": "ee7eff37-8c6a-4f36-ad71-bd65ca0aaed2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -121,8 +121,12 @@
           "tableFrom": "lead_activities",
           "tableTo": "leads",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["lead_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "lead_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -365,8 +369,12 @@
           "tableFrom": "leads",
           "tableTo": "workspaces",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -375,8 +383,12 @@
           "tableFrom": "leads",
           "tableTo": "pipelines",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["pipeline_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pipeline_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -385,8 +397,12 @@
           "tableFrom": "leads",
           "tableTo": "steps",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["step_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "step_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -395,8 +411,12 @@
           "tableFrom": "leads",
           "tableTo": "status",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["status_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "status_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -405,8 +425,12 @@
           "tableFrom": "leads",
           "tableTo": "users",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["assignee_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "assignee_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -539,8 +563,12 @@
           "tableFrom": "pipelines",
           "tableTo": "workspaces",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -663,8 +691,12 @@
           "tableFrom": "status",
           "tableTo": "workspaces",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -738,8 +770,12 @@
           "tableFrom": "step_statuses",
           "tableTo": "steps",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["step_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "step_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -748,8 +784,12 @@
           "tableFrom": "step_statuses",
           "tableTo": "status",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["status_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "status_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -757,7 +797,10 @@
       "compositePrimaryKeys": {
         "step_statuses_step_id_status_id_pk": {
           "name": "step_statuses_step_id_status_id_pk",
-          "columns": ["step_id", "status_id"]
+          "columns": [
+            "step_id",
+            "status_id"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -896,8 +939,12 @@
           "tableFrom": "steps",
           "tableTo": "pipelines",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["pipeline_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pipeline_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -906,8 +953,12 @@
           "tableFrom": "steps",
           "tableTo": "workspaces",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -994,8 +1045,12 @@
           "tableFrom": "users",
           "tableTo": "workspaces",
           "schemaTo": "linharesflow",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1005,7 +1060,9 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -1069,7 +1126,9 @@
         "workspaces_slug_unique": {
           "name": "workspaces_slug_unique",
           "nullsNotDistinct": false,
-          "columns": ["slug"]
+          "columns": [
+            "slug"
+          ]
         }
       },
       "policies": {},

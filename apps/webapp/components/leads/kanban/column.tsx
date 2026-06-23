@@ -60,7 +60,7 @@ export const KanbanColumn = ({ step, leads, loading, loadedAt, columns, closedIn
   return (
     <div
       ref={setNodeRef}
-      className={`w-full bg-muted/30 rounded-lg border border-border shadow-sm flex flex-col h-[calc(100vh-140px)] transition-colors ${
+      className={`w-[85%] shrink-0 snap-start bg-muted/30 rounded-lg border border-border shadow-sm flex flex-col h-[calc(100vh-140px)] transition-colors md:w-full md:shrink ${
         isOver ? 'ring-2 ring-primary/50 bg-primary/5' : ''
       }`}>
       <div className={`px-3 py-2 rounded-t-lg flex-shrink-0 border-b border-border ${colorClasses.headerBg}`}>

@@ -1,9 +1,9 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-
 import { cn } from '@workspace/ui/lib/utils';
 import { LeadCardContent, type LeadItem } from '@/components/leads/lead-card-content';
 import type { ClosedInfo, KanbanColumn } from '@/utils/kanban-columns';
@@ -44,7 +44,7 @@ export const KanbanCard = ({ lead, loadedAt, columns, closedInfo, onUpdated, onO
       onUpdated={onUpdated}
       onOpenDetails={onOpenDetails}
       onMoveStage={onMoveStage}
-      className={cn('group cursor-grab touch-none active:cursor-grabbing', isDragging && 'shadow-xl ring-2 ring-ring')}
+      className={cn('group cursor-grab md:touch-none active:cursor-grabbing', isDragging && 'shadow-xl ring-2 ring-ring')}
     />
   );
 };

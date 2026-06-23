@@ -1,14 +1,14 @@
 import Link from 'next/link';
 
-import { VexnetLogo } from '@workspace/ui/components/logos/vexnet';
+import { LinharesLogo } from '@workspace/ui/components/logos/linhares';
 import { Separator } from '@workspace/ui/components/separator';
 
 const sections = [
   {
     title: '1. Introdução',
-    content: `A linharesflow CRM ("nós", "nosso") se compromete a proteger a privacidade dos dados dos usuários e contatos gerenciados por meio de nossa plataforma. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e compartilhamos informações no contexto do uso do nosso sistema de gerenciamento de relacionamento com o cliente.
+    content: `O Grupo Linhares ("nós", "nosso") se compromete a proteger a privacidade dos dados dos usuários e contatos gerenciados por meio de nossa plataforma. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e compartilhamos informações no contexto do uso do nosso sistema de gerenciamento de relacionamento com o cliente.
 
-Ao utilizar a plataforma linharesflow CRM, você concorda com os termos descritos nesta política.`,
+Ao utilizar a plataforma Grupo Linhares, você concorda com os termos descritos nesta política.`,
   },
   {
     title: '2. Dados Coletados',
@@ -39,7 +39,7 @@ Os dados não são utilizados para fins de marketing não solicitado, análise c
 Além da Meta, não compartilhamos os dados coletados com terceiros, exceto:
 
 • Quando exigido por lei, decisão judicial ou autoridade competente.
-• Para proteger os direitos legais da linharesflow CRM ou de terceiros.
+• Para proteger os direitos legais do Grupo Linhares ou de terceiros.
 • Com prestadores de serviços de infraestrutura (como hospedagem em nuvem) que operam sob acordos de confidencialidade e processamento de dados.
 
 Não vendemos, alugamos ou cedemos dados pessoais a terceiros para fins comerciais.`,
@@ -70,8 +70,8 @@ Para exercer qualquer um desses direitos, entre em contato conosco pelo e-mail i
     title: '7. Contato do Responsável',
     content: `Para dúvidas, solicitações ou reclamações relacionadas a esta Política de Privacidade ou ao tratamento de dados pessoais, entre em contato com nosso responsável pelo tratamento de dados (DPO):
 
-**linharesflow CRM**
-E-mail: privacidade@linharesflowacrm.com.br
+**Grupo Linhares**
+E-mail: privacidade@grupolinhares.com.br
 
 Caso não obtenha resposta satisfatória, você pode registrar uma reclamação junto à Autoridade Nacional de Proteção de Dados (ANPD) pelo site gov.br/anpd.`,
   },
@@ -83,7 +83,7 @@ export default function PrivacyPolicyPage() {
       <header className="border-b">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3">
           <Link href="/" className="flex items-center">
-            <VexnetLogo />
+            <LinharesLogo height={30} className="text-foreground" />
           </Link>
         </div>
       </header>
@@ -113,7 +113,7 @@ export default function PrivacyPolicyPage() {
 
         <Separator />
 
-        <p className="text-xs text-muted-foreground text-center pb-4">© {new Date().getFullYear()} linharesflow CRM. Todos os direitos reservados.</p>
+        <p className="text-xs text-muted-foreground text-center pb-4">© {new Date().getFullYear()} Grupo Linhares. Todos os direitos reservados.</p>
       </main>
     </div>
   );

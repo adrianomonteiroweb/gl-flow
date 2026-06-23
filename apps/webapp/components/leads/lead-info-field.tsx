@@ -126,7 +126,7 @@ export const LeadInfoField = ({ leadId, icon, label, value, href, fieldType, onS
         <p className="text-xs text-gray-500">{label}</p>
         {value ? (
           href ? (
-            <a href={href} className="text-sm text-blue-600 hover:underline truncate block">
+            <a href={href} className="text-sm text-primary hover:underline truncate block">
               {value}
             </a>
           ) : (

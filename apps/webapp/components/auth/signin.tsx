@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { LinharesLogo } from '@workspace/ui/components/logos/linhares';
+
 import { SignInForm } from '@/components/auth/signin-form';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { SignUpForm } from '@/components/auth/signup-form';
@@ -84,13 +86,11 @@ export function SignIn({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted">
-      <div className="w-full max-w-md p-6 sm:p-8 bg-background rounded-xl shadow-lg border space-y-6">
-        {currentView !== 'signup' && (
-          <div className="flex justify-center mb-8">
-            <span className="text-2xl font-bold text-foreground">linharesflow</span>
-          </div>
-        )}
+    <div className="min-h-screen flex items-center justify-center bg-muted p-4">
+      <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm sm:p-8 space-y-8">
+        <div className="flex justify-center">
+          <LinharesLogo height={34} className="text-foreground" />
+        </div>
 
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">{getTitle()}</h1>

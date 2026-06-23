@@ -39,16 +39,16 @@ export const ViewToggle = ({ onViewChange }: ViewToggleProps) => {
   if (!mounted) {
     return (
       <Tabs value="list" className="w-fit opacity-50 pointer-events-none">
-        <TabsList className="grid w-full grid-cols-2 bg-[#F0F5FA] border border-border">
+        <TabsList className="grid w-full grid-cols-2 bg-muted border border-border">
           <TabsTrigger
             value="list"
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm transition-all">
+            className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all">
             <List className="w-4 h-4" />
             <span className="hidden sm:inline text-sm font-medium">Lista</span>
           </TabsTrigger>
           <TabsTrigger
             value="kanban"
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm transition-all">
+            className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all">
             <Kanban className="w-4 h-4" />
             <span className="hidden sm:inline text-sm font-medium">Kanban</span>
           </TabsTrigger>

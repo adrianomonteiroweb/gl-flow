@@ -38,19 +38,19 @@ export const TemplateDefault = `
                           <td valign="middle" height="32" style="border: 0; border-collapse: collapse; margin: 0; padding: 0; height: 32px">
                             <a
                               style="border: 0; margin: 0; padding: 0; text-decoration: none; outline: 0"
-                              href="https://limworkspace.com.br"
+                              href="https://grupolinhares.com.br"
                               target="_blank"
                             >
-                              <div>
-                                <!--<img
-                                src="https://static.limworkspace.com.br/email/logo.png"
-                                width="120"
-                                align="middle"
-                                style="border: 0; line-height: 100%; vertical-align: middle"
-                                alt="Agenda Lim"
-                                className="CToWUd"
-                                data-bit="iit"
-                              />-->
+                              <div
+                                style="
+                                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif;
+                                  font-size: 20px;
+                                  font-weight: 700;
+                                  color: #000000;
+                                  line-height: 32px;
+                                "
+                              >
+                                Grupo Linhares
                               </div>
                             </a>
                           </td>
@@ -86,7 +86,7 @@ export const TemplateDefault = `
                                       width: 100%;
                                       width: 482px;
                                       border-radius: 12px;
-                                      background-color: #e3e8ee;
+                                      background-color: #f0f0f0;
                                       padding: 1px;
                                     "
                                   >
@@ -230,14 +230,14 @@ export const TemplateDefault = `
                                                                         border: 0;
                                                                         margin: 0;
                                                                         padding: 0;
-                                                                        color: #5D87FF !important;
+                                                                        color: #ff2300 !important;
                                                                         font-weight: bold;
                                                                         text-decoration: none;
                                                                         white-space: nowrap;
                                                                       "
-                                                                      href="mailto:contato@limworkspace.com.br"
+                                                                      href="mailto:contato@grupolinhares.com.br"
                                                                       target="_blank"
-                                                                      >contato@limworkspace.com.br</a
+                                                                      >contato@grupolinhares.com.br</a
                                                                     >.
                                                                   </td>
                                                                 </tr>

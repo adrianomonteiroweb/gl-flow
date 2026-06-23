@@ -6,7 +6,7 @@ interface LogoProps {
   accent?: string;
 }
 
-const BRAND_RED = '#e11e05';
+const BRAND_RED = '#ff2300';
 
 /**
  * Grupo Linhares symbol (the arrow mark).

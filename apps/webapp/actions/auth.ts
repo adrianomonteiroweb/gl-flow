@@ -212,7 +212,7 @@ export async function requestPasswordReset(email: string) {
       },
       {
         to: user.email,
-        subject: `Recuperar senha - linharesflow`,
+        subject: `Recuperar senha - Grupo Linhares`,
       }
     );
 

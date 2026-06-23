@@ -173,6 +173,14 @@
 }
 
 @layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .calendar-theme {
     @apply font-sans;
     @apply [&_button]:bg-transparent [&_button]:border [&_button]:rounded [&_button]:px-3 [&_button]:py-1.5 [&_button]:text-sm;

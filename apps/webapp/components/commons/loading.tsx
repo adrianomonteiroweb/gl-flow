@@ -1,9 +1,11 @@
 'use client';
 
+import { LinharesSymbol } from '@workspace/ui/components/logos/linhares';
+
 export function AppLoading() {
   return (
-    <div className="flex h-full w-full items-center justify-center animate-pulse">
-      <span className="text-2xl font-bold text-foreground">glflow</span>
+    <div className="flex h-full w-full items-center justify-center bg-black">
+      <LinharesSymbol height={72} className="animate-pulse text-white" />
     </div>
   );
 }

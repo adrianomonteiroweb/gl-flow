@@ -1,10 +1,10 @@
 import '@workspace/ui/globals.css';
 
 import type { Metadata } from 'next';
+import { Toaster } from 'sonner';
 import { Nunito_Sans, Taviraj, Pontano_Sans } from 'next/font/google';
 
 import { Providers } from '@/components/commons/providers';
-import { Toaster } from 'sonner';
 
 const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
@@ -32,11 +32,26 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#000000',
 };
 
 export const metadata: Metadata = {
-  title: 'glflow',
-  description: '',
+  applicationName: 'Linhares Flow',
+  title: {
+    default: 'Linhares Flow',
+    template: '%s | Linhares Flow',
+  },
+  description: 'Plataforma de gestão do Grupo Linhares.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Linhares Flow',
+  },
+  formatDetection: { telephone: false },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'msapplication-tap-highlight': 'no',
+  },
 };
 
 export default async function RootLayout({
@@ -46,14 +61,6 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning className="w-full h-full overflow-hidden">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="msapplication-tap-highlight" content="no" />
-      </head>
       <body
         className={`${nunitoSans.variable} ${taviraj.variable} ${pontanoSans.variable} font-sans antialiased w-full h-full`}
         suppressHydrationWarning>

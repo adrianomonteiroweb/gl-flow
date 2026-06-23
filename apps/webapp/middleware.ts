@@ -6,8 +6,14 @@ const PUBLIC_ROUTES = ['/login', '/privacy-policy', '/reset-password', '/invite'
 const PUBLIC_PREFIXES = ['/api/webhook', '/api/webhooks'];
 
 const isPublic = (pathname: string): boolean => {
-  if (PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))) return true;
-  if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) return true;
+  if (PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))) {
+    return true;
+  }
+
+  if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) {
+    return true;
+  }
+
   return false;
 };
 
@@ -59,5 +65,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest|sw.js|icons/|brand/).*)'],
 };

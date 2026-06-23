@@ -29,6 +29,11 @@ out/
 build
 dist
 
+# PWA (serwist-generated service worker)
+apps/webapp/public/sw.js
+apps/webapp/public/sw.js.map
+apps/webapp/public/swe-worker-*.js
+
 
 # Debug
 npm-debug.log*

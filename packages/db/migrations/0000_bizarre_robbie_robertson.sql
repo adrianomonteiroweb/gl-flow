@@ -1,4 +1,4 @@
-CREATE SCHEMA "linharesflow";
+CREATE SCHEMA IF NOT EXISTS "linharesflow";
 --> statement-breakpoint
 CREATE TABLE "linharesflow"."lead_activities" (
 	"id" varchar(255) PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,

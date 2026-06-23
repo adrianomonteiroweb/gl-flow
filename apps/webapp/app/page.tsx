@@ -2,13 +2,12 @@ import { User } from 'lucide-react';
 
 import { getMe } from '@/actions/users';
 import { PageInset } from '@/components/commons/page-inset';
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@workspace/ui/components/card';
 
 export default async function Page() {
   const user = await getMe();
 
-  const firstName = user && user.name ? user.name.split(' ')[0] : 'Usuário';
+  const first_name = user && user.name ? user.name.split(' ')[0] : 'Usuário';
 
   return (
     <PageInset title="">
@@ -20,7 +19,7 @@ export default async function Page() {
                 <User size={80} className="md:w-[120px] md:h-[120px]" />
               </div>
               <CardHeader className="p-0 space-y-1">
-                <CardTitle className="text-2xl md:text-3xl font-bold">Olá, {firstName}!</CardTitle>
+                <CardTitle className="text-2xl md:text-3xl font-bold">Olá, {first_name}!</CardTitle>
                 <CardDescription className="text-primary-foreground/80 font-medium text-sm md:text-base">Bem-vindo(a)!</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row gap-4 md:gap-8 p-0 mt-4 md:mt-6"></CardContent>

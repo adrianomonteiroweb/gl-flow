@@ -41,15 +41,15 @@ export default async function DashboardPage() {
   return (
     <PageInset title="Dashboard">
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 lg:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <div className="flex flex-row items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {greeting}, {first_name}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">Filial Fortaleza · {formatGreetingDate(now)}</p>
           </div>
 
-          <Button asChild className="gap-2 self-start sm:self-auto">
+          <Button asChild className="shrink-0 gap-2">
             <Link href="/pipelines">
               <Plus className="h-4 w-4" />
               Nova venda

@@ -11,7 +11,7 @@ export const StatCard = ({ stat }: { stat: DashboardStat }) => {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{stat.label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
         <span className={cn('flex h-9 w-9 items-center justify-center rounded-lg bg-muted', stat.accent)}>
           <Icon className="h-4 w-4" />
         </span>

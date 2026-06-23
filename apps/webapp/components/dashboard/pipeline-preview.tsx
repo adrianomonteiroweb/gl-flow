@@ -17,10 +17,10 @@ export const PipelinePreview = () => {
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
-        <h2 className="text-sm font-semibold text-foreground">Pipeline de vendas</h2>
+        <h2 className="text-base font-semibold text-foreground">Pipeline de vendas</h2>
         <Link
           href="/pipelines"
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+          className="inline-flex items-center gap-1 py-1.5 -my-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
           Ver tudo
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -30,7 +30,7 @@ export const PipelinePreview = () => {
         {PIPELINE_PREVIEW.map(column => (
           <div key={column.key} className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{column.title}</span>
+              <span className="text-xs font-medium text-muted-foreground">{column.title}</span>
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-medium text-muted-foreground">
                 {column.items.length}
               </span>
@@ -44,7 +44,7 @@ export const PipelinePreview = () => {
                   {item.value && <p className="mt-1.5 text-sm font-semibold text-foreground">{item.value}</p>}
                   <span
                     className={cn(
-                      'mt-2 inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                      'mt-2 inline-flex rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide',
                       badgeToneClass[item.badgeTone]
                     )}>
                     {item.badge}

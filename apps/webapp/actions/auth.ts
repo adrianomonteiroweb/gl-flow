@@ -10,9 +10,8 @@ import { nanoid } from 'nanoid';
 import { findUserByEmail, getMe } from '@/actions/users';
 import { createJWT, verifyJWT } from '@workspace/utils/jwt';
 import { SES } from '@workspace/utils/aws/ses';
-import { WorkspaceRepository, FlowConfigRepository, DEFAULT_FLOW_CONFIG, provisionWorkspacePipeline } from '@workspace/db';
+import { WorkspaceRepository, provisionWorkspacePipeline } from '@workspace/db';
 import UserRepository from '@/repositories/UserRepository';
-import { INITIAL_ONBOARDING_STATE } from '@/lib/onboarding/state';
 import { validatePasswordFull } from '@/lib/auth/password-breach';
 
 const COOKIE_KEY = 'glflow_DOC_AT';
@@ -129,7 +128,6 @@ export async function signUpUser(data: { name: string; email: string; password: 
         {
           name: data.name,
           slug: buildWorkspaceSlug(data.name),
-          payload: { onboarding: INITIAL_ONBOARDING_STATE },
         },
         { tx }
       );
@@ -143,16 +141,6 @@ export async function signUpUser(data: { name: string; email: string; password: 
           role: 'owner',
           workspace_id: workspace.id,
           payload: JSON.stringify({}),
-        },
-        { tx }
-      );
-
-      await FlowConfigRepository.create(
-        {
-          workspace_id: workspace.id,
-          flow_name: 'onboarding',
-          is_active: true,
-          config: DEFAULT_FLOW_CONFIG,
         },
         { tx }
       );

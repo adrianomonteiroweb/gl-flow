@@ -3,10 +3,11 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
+import { StepRepository, StatusRepository } from '@workspace/db';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
 import { AddressData } from '@/repositories/types';
 import { LeadActivityLogger } from '@/lib/activities/lead-activity-logger';
-import { isLeadScopeRestricted } from '@/lib/auth/permissions';
+import { isLeadScopeRestricted, canEditPostSaleStages } from '@/lib/auth/permissions';
 import { resolveWorkspaceId } from '@/lib/workspaces/development-workspace';
 
 import { getMe } from './users';
@@ -40,7 +41,77 @@ export async function getLeads(params: Omit<GetLeadParams, 'workspace_id'>) {
 }
 
 export async function getLeadWithChats(id: number | string) {
-  return await LeadRepository.getLeadWithChatsById(String(id));
+  return await LeadRepository.getLeadById(String(id));
+}
+
+export async function updateLeadStep(leadId: string, stepId: string, statusId?: string) {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    const lead = await LeadRepository.findById(leadId);
+
+    if (!lead) {
+      return { success: false, error: 'Lead não encontrado' };
+    }
+
+    const targetStep = await StepRepository.findById(stepId);
+
+    if (!targetStep || targetStep.workspace_id !== lead.workspace_id) {
+      return { success: false, error: 'Etapa inválida' };
+    }
+
+    const currentStep = lead.step_id ? await StepRepository.findById(lead.step_id) : null;
+
+    if (!canEditPostSaleStages(me.role) && (targetStep.is_post_sale || currentStep?.is_post_sale)) {
+      return { success: false, error: 'Você não tem permissão para alterar etapas de pós-venda.' };
+    }
+
+    const targetStatus = statusId ? await StatusRepository.findById(statusId) : null;
+    const statusSlug = targetStatus?.slug ?? null;
+
+    const updateData: Record<string, unknown> = { step_id: stepId, won_at: null, lost_at: null };
+
+    if (statusId) {
+      updateData.status_id = statusId;
+    }
+
+    if (statusSlug === 'ganha') {
+      updateData.won_at = new Date().toISOString();
+    } else if (statusSlug === 'perdida') {
+      updateData.lost_at = new Date().toISOString();
+    }
+
+    const updated = await LeadRepository.update(leadId, updateData);
+
+    const workspace_id = lead.workspace_id ?? me.workspace_id ?? null;
+
+    LeadActivityLogger.log({
+      workspace_id,
+      lead_id: leadId,
+      type: 'step_changed',
+      actor_type: 'user',
+      actor_id: me.id,
+      actor_name: me.name,
+      metadata: { from: lead.step_id ?? null, to: stepId, from_label: currentStep?.name ?? null, to_label: targetStep.name ?? null },
+    });
+
+    if (statusSlug === 'ganha') {
+      LeadActivityLogger.log({ workspace_id, lead_id: leadId, type: 'lead_won', actor_type: 'user', actor_id: me.id, actor_name: me.name });
+    } else if (statusSlug === 'perdida') {
+      LeadActivityLogger.log({ workspace_id, lead_id: leadId, type: 'lead_closed', actor_type: 'user', actor_id: me.id, actor_name: me.name });
+    }
+
+    revalidatePath('/pipelines', 'layout');
+
+    return { success: true, data: updated };
+  } catch (error: any) {
+    console.error('Error updating lead step:', error);
+    return { success: false, error: error?.message || 'Erro ao atualizar etapa' };
+  }
 }
 
 export async function updateLeadInfo(id: string, data: UpdateLeadInfoParams) {
@@ -137,7 +208,7 @@ export async function updateLeadLossReason(id: string, lossReason: string | null
       metadata: { lossReason: parsed.data },
     });
 
-    revalidatePath('/chats', 'layout');
+    revalidatePath('/pipelines', 'layout');
 
     return { success: true, data: updated };
   } catch (error: any) {

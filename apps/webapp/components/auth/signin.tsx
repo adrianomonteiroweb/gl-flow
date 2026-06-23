@@ -1,14 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 
-import { VexnetLogo } from '@workspace/ui/components/logos/vexnet';
 import { SignInForm } from '@/components/auth/signin-form';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { SignUpForm } from '@/components/auth/signup-form';
 import { requestPasswordReset, signUpUser } from '@/actions/auth';
-import { useLoginBranding } from '@/hooks/use-login-branding';
 
 type AuthView = 'signin' | 'signup' | 'forgot-password';
 
@@ -18,8 +15,6 @@ export function SignIn({
   handleAuthentication: (email: string, password: string) => Promise<{ status: number; [key: string]: unknown }>;
 }) {
   const [currentView, setCurrentView] = useState<AuthView>('signin');
-  const branding = useLoginBranding();
-  const [logoError, setLogoError] = useState(false);
 
   const handleForgotPassword = async (email: string) => {
     const result = await requestPasswordReset(email);
@@ -30,7 +25,6 @@ export function SignIn({
     const result = await signUpUser({ name, email, password });
 
     if (result.status === 200 || result.status === 201) {
-      localStorage.removeItem('app:branding');
       window.location.href = '/';
     }
 
@@ -89,41 +83,14 @@ export function SignIn({
     return null;
   };
 
-  const renderLogo = (): React.ReactNode => {
-    if (branding.logoUrl && !logoError) {
-      return (
-        <Image
-          src={branding.logoUrl}
-          alt={branding.companyName || 'Logo'}
-          width={180}
-          height={48}
-          className="max-h-12 max-w-[180px] object-contain"
-          onError={() => setLogoError(true)}
-          unoptimized
-        />
-      );
-    }
-
-    if (branding.companyName) {
-      return <span className="text-2xl font-bold text-foreground">{branding.companyName}</span>;
-    }
-
-    return <VexnetLogo />;
-  };
-
-  const brandStyle =
-    branding.hasCustomBranding && branding.useLogoColors
-      ? ({
-          '--primary': branding.primaryColor,
-          '--primary-foreground': branding.primaryForeground,
-          '--ring': branding.primaryColor,
-        } as React.CSSProperties)
-      : undefined;
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted" style={brandStyle}>
+    <div className="min-h-screen flex items-center justify-center bg-muted">
       <div className="w-full max-w-md p-6 sm:p-8 bg-background rounded-xl shadow-lg border space-y-6">
-        {currentView !== 'signup' && <div className="flex justify-center mb-8">{renderLogo()}</div>}
+        {currentView !== 'signup' && (
+          <div className="flex justify-center mb-8">
+            <span className="text-2xl font-bold text-foreground">glflow</span>
+          </div>
+        )}
 
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">{getTitle()}</h1>

@@ -1,4 +1,4 @@
-import '@workspace/ui/glglflowls.css';
+import '@workspace/ui/globals.css';
 
 import type { Metadata } from 'next';
 import { Nunito_Sans, Taviraj, Pontano_Sans } from 'next/font/google';

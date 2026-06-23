@@ -2,8 +2,8 @@
 
 import { z } from 'zod';
 
+import { PipelineRepository, StepRepository, StatusRepository } from '@workspace/db';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
-import { ChatRepository } from '@/repositories/ChatRepository';
 import { isLeadScopeRestricted, canAccessSettings, canAssignLeads } from '@/lib/auth/permissions';
 import { LeadActivityLogger } from '@/lib/activities/lead-activity-logger';
 import { resolveWorkspaceId } from '@/lib/workspaces/development-workspace';
@@ -94,28 +94,27 @@ type AssigneeActivity = {
 };
 
 const setLeadAssignee = async (me: any, leadId: string, assigneeId: string | null, activity: AssigneeActivity = {}): Promise<boolean> => {
-  const chat = await ChatRepository.resolveActiveChat(leadId, me.workspace_id ?? null);
+  const lead = await LeadRepository.findById(leadId);
 
-  if (!chat) {
+  if (!lead) {
     return false;
   }
 
-  if (chat.assignee_id === assigneeId) {
+  if (lead.assignee_id === assigneeId) {
     return true;
   }
 
-  const updated = await ChatRepository.updateAssignee(chat.id, assigneeId);
+  const updated = await LeadRepository.update(leadId, { assignee_id: assigneeId });
 
   if (updated) {
     LeadActivityLogger.log({
-      workspace_id: chat.workspace_id ?? me.workspace_id ?? null,
+      workspace_id: lead.workspace_id ?? me.workspace_id ?? null,
       lead_id: leadId,
-      chat_id: String(chat.id),
       type: activity.type ?? 'assignee_changed',
       actor_type: 'user',
       actor_id: me.id,
       actor_name: me.name,
-      metadata: { from: chat.assignee_id ?? null, to: assigneeId, ...(activity.metadata ?? {}) },
+      metadata: { from: lead.assignee_id ?? null, to: assigneeId, ...(activity.metadata ?? {}) },
     });
   }
 
@@ -151,13 +150,11 @@ export async function takeClient(leadId: string) {
       return { status: 401, message: 'Usuário não autenticado' };
     }
 
-    const chat = await ChatRepository.findActiveByLeadId(leadId);
+    const lead = await LeadRepository.findById(leadId);
 
-    if (chat?.assignee_id && chat.assignee_id !== me.id) {
+    if (lead?.assignee_id && lead.assignee_id !== me.id) {
       return { status: 409, message: 'Este lead já foi assumido por outra pessoa.' };
     }
-
-    // Self-assign is logged as "Assumido por usuário <papel>" rather than the
 
     const ok = await setLeadAssignee(me, leadId, me.id, { type: 'lead_taken', metadata: { role: me.role } });
 
@@ -176,9 +173,9 @@ export async function releaseClient(leadId: string) {
       return { status: 401, message: 'Usuário não autenticado' };
     }
 
-    const chat = await ChatRepository.findActiveByLeadId(leadId);
+    const lead = await LeadRepository.findById(leadId);
 
-    if (chat?.assignee_id && chat.assignee_id !== me.id && !canAssignLeads(me.role)) {
+    if (lead?.assignee_id && lead.assignee_id !== me.id && !canAssignLeads(me.role)) {
       return { status: 403, message: 'Você só pode liberar leads atribuídos a você.' };
     }
 
@@ -194,11 +191,11 @@ export async function releaseClient(leadId: string) {
 type DistributionPlan = {
   /** Ordered (FIFO) lead → user assignments to apply. */
   assignments: { leadId: string; userId: string }[];
-  /** How many atendimentos each user receives in this run. */
+  /** How many leads each user receives in this run. */
   perUser: Record<string, number>;
   /** Projected total open load per user after the distribution. */
   finalTotals: Record<string, number>;
-  /** Total atendimentos that will be distributed. */
+  /** Total leads that will be distributed. */
   total: number;
 };
 
@@ -236,7 +233,7 @@ const buildDistributionPlan = async (workspaceId: string, reassignAll: boolean, 
 };
 
 type DistributeParams = {
-  /** When true, redistribute every open atendimento (even ones being worked). */
+  /** When true, redistribute every open lead (even ones already assigned). */
   reassignAll?: boolean;
   /** Users to distribute among. */
   userIds: string[];
@@ -275,7 +272,7 @@ export async function distributeClients(params: DistributeParams) {
     }
 
     if (!canAssignLeads(me.role)) {
-      return { status: 403, message: 'Você não tem permissão para distribuir atendimentos.' };
+      return { status: 403, message: 'Você não tem permissão para distribuir leads.' };
     }
 
     const workspaceId = await resolveWorkspaceId(me);
@@ -294,20 +291,13 @@ export async function distributeClients(params: DistributeParams) {
     const { assignments } = await buildDistributionPlan(workspaceId, reassignAll, userIds);
 
     if (assignments.length === 0) {
-      return { status: 400, message: 'Nenhum atendimento para distribuir.' };
+      return { status: 400, message: 'Nenhum lead para distribuir.' };
     }
 
     const perUser: Record<string, number> = Object.fromEntries(userIds.map(id => [id, 0]));
     let distributed = 0;
 
     for (const { leadId, userId } of assignments) {
-      if (!reassignAll) {
-        const activeChat = await ChatRepository.findActiveByLeadId(leadId);
-        if (activeChat?.assignee_id && (await LeadRepository.chatHasHumanInteraction(activeChat.id))) {
-          continue;
-        }
-      }
-
       const ok = await setLeadAssignee(me, leadId, userId);
 
       if (ok) {
@@ -318,7 +308,7 @@ export async function distributeClients(params: DistributeParams) {
 
     return { status: 200, data: { total: distributed, perUser } };
   } catch (error: any) {
-    console.error('Erro ao distribuir atendimentos:', error);
+    console.error('Erro ao distribuir leads:', error);
     return { status: 500, message: 'Ocorreu um erro inesperado. Tente novamente.' };
   }
 }
@@ -348,9 +338,18 @@ export async function createClient(data: any) {
 
     const hasAddress = address && Object.values(address).some(v => v);
 
+    // Place the new lead at the start of the default pipeline.
+    const pipeline = await PipelineRepository.findDefaultByWorkspace(workspaceId);
+    const firstStep = pipeline ? await StepRepository.findFirstByPipeline(workspaceId, pipeline.id) : null;
+    const initialStatus = await StatusRepository.findBySlug(workspaceId, 'novo');
+
     const clientData: any = {
       name: rest.name,
       workspace_id: workspaceId,
+      assignee_id: me.id,
+      pipeline_id: pipeline?.id ?? null,
+      step_id: firstStep?.id ?? null,
+      status_id: initialStatus?.id ?? null,
     };
 
     if (rest.email) {
@@ -371,26 +370,9 @@ export async function createClient(data: any) {
 
     const created = await LeadRepository.create(clientData);
 
-    let chat: any = null;
-
-    try {
-      chat = await ChatRepository.create({
-        lead_id: created.id,
-        workspace_id: workspaceId,
-        assignee_id: me.id,
-        title: `Cliente - ${created.name}`,
-        step: 'new',
-        status: 'pending',
-      });
-    } catch (error: any) {
-      console.error('Erro ao criar chat para o cliente:', error);
-      // Don't fail the client creation if chat creation fails
-    }
-
     LeadActivityLogger.log({
       workspace_id: workspaceId,
       lead_id: created.id,
-      chat_id: chat?.id ?? null,
       type: 'lead_created',
       actor_type: 'user',
       actor_id: me.id,
@@ -465,9 +447,8 @@ export async function updateClient(id: string, data: any) {
   }
 }
 
-const isPipelineResolved = (chat: any): boolean => {
-  return chat?.step_slug === 'closed' && (chat?.status_slug === 'negociacao_ganha' || chat?.status_slug === 'negociacao_perdida');
-};
+/** A lead is resolved once it has been won or lost. */
+const isLeadResolved = (lead: any): boolean => !!(lead?.won_at || lead?.lost_at);
 
 export async function getClientPipelineStatus(leadId: string) {
   try {
@@ -477,23 +458,22 @@ export async function getClientPipelineStatus(leadId: string) {
       return { status: 401, message: 'Usuário não autenticado' };
     }
 
-    const ticket = await LeadRepository.getLeadWithChatsById(leadId);
+    const ticket = await LeadRepository.getLeadById(leadId);
 
     if (!ticket) {
       return { status: 404, message: 'Cliente não encontrado' };
     }
 
-    const chat = ticket.chat;
-    const canInactivate = isPipelineResolved(chat);
+    const { lead, chat } = ticket;
+    const canInactivate = isLeadResolved(lead);
 
-    const stepLabel =
-      chat?.step_slug === 'closed'
-        ? chat?.status_slug === 'negociacao_perdida'
-          ? 'Fechado – Perdido'
-          : 'Fechado – Ganho'
-        : (chat?.step_name ?? getStepLabel(chat?.step ?? 'new'));
+    const stepLabel = lead.won_at
+      ? 'Ganho'
+      : lead.lost_at
+        ? 'Perdido'
+        : (chat?.step_name ?? getStepLabel(chat?.step ?? ''));
 
-    const statusLabel = chat?.status_name ?? getStatusLabel(chat?.status ?? 'pending');
+    const statusLabel = chat?.status_name ?? getStatusLabel(chat?.status ?? '');
 
     return {
       status: 200,
@@ -515,33 +495,26 @@ export async function inactivateClient(id: string) {
       return { status: 401, message: 'Usuário não autenticado' };
     }
 
-    const ticket = await LeadRepository.getLeadWithChatsById(id);
-    const chat = ticket?.chat;
+    const ticket = await LeadRepository.getLeadById(id);
+    const lead = ticket?.lead;
 
-    if (!isPipelineResolved(chat)) {
+    if (!isLeadResolved(lead)) {
       return {
         status: 400,
-        message: 'O cliente só pode ser inativado quando sua negociação estiver encerrada (Fechado – Ganho ou Fechado – Perdido).',
+        message: 'O cliente só pode ser inativado quando sua negociação estiver encerrada (ganha ou perdida).',
       };
     }
 
     await LeadRepository.inactivateClient(id);
 
-    const activeChat = await ChatRepository.findActiveByLeadId(id);
-
-    if (activeChat) {
-      await ChatRepository.closeChat(activeChat.id);
-
-      LeadActivityLogger.log({
-        workspace_id: activeChat.workspace_id ?? me.workspace_id ?? null,
-        lead_id: id,
-        chat_id: String(activeChat.id),
-        type: 'chat_closed',
-        actor_type: 'user',
-        actor_id: me.id,
-        actor_name: me.name,
-      });
-    }
+    LeadActivityLogger.log({
+      workspace_id: lead.workspace_id ?? me.workspace_id ?? null,
+      lead_id: id,
+      type: 'lead_closed',
+      actor_type: 'user',
+      actor_id: me.id,
+      actor_name: me.name,
+    });
 
     return { status: 200 };
   } catch (error: any) {
@@ -563,6 +536,15 @@ export async function reactivateClient(id: string) {
     }
 
     await LeadRepository.reactivateClient(id);
+
+    LeadActivityLogger.log({
+      workspace_id: me.workspace_id ?? null,
+      lead_id: id,
+      type: 'lead_reactivated',
+      actor_type: 'user',
+      actor_id: me.id,
+      actor_name: me.name,
+    });
 
     return { status: 200 };
   } catch (error: any) {

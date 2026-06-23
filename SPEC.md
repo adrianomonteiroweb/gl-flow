@@ -287,6 +287,18 @@ function handleClick() {
 
 ## Padrões de Arquitetura
 
+### Padrões de imports
+
+Organizar imports de libs externas primeiro, depois de libs próprias e depois imports internos
+
+```ts
+import { revalidatePath } from 'next/cache';
+
+import { LeadRepository } from '@/repositories/LeadRepository';
+
+import { getMe } from './users';
+```
+
 ### Server Actions
 
 **Localização**: `apps/webapp/actions/[entity].ts`
@@ -298,8 +310,10 @@ function handleClick() {
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { getMe } from './users';
+
 import { LeadRepository } from '@/repositories/LeadRepository';
+
+import { getMe } from './users';
 
 // 1. Definir schema de validação
 const UpdateLeadSchema = z.object({

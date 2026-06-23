@@ -7,12 +7,11 @@ import {
   PipelineRepository,
   StepRepository,
   StatusRepository,
-  TeamRepository,
   pipelines_table,
   steps_table,
   status_table,
   step_statuses,
-  chats_table,
+  leads_table,
   PIPELINE_STEP_SEED,
   PIPELINE_STATUS_SEED,
   PIPELINE_STEP_STATUS_SEED,
@@ -79,20 +78,20 @@ const findStatusInWorkspace = async (id: string, workspaceId: string) => {
   return status ?? null;
 };
 
-const countChatsByStep = async (workspaceId: string, stepId: string) => {
+const countLeadsByStep = async (workspaceId: string, stepId: string) => {
   const [row] = await db
     .select({ value: count() })
-    .from(chats_table)
-    .where(and(eq(chats_table.workspace_id, workspaceId), eq(chats_table.step, stepId), isNull(chats_table.done_at)));
+    .from(leads_table)
+    .where(and(eq(leads_table.workspace_id, workspaceId), eq(leads_table.step_id, stepId), isNull(leads_table.deleted_at)));
 
   return row?.value ?? 0;
 };
 
-const countChatsByStatus = async (workspaceId: string, statusId: string) => {
+const countLeadsByStatus = async (workspaceId: string, statusId: string) => {
   const [row] = await db
     .select({ value: count() })
-    .from(chats_table)
-    .where(and(eq(chats_table.workspace_id, workspaceId), eq(chats_table.status, statusId), isNull(chats_table.done_at)));
+    .from(leads_table)
+    .where(and(eq(leads_table.workspace_id, workspaceId), eq(leads_table.status_id, statusId), isNull(leads_table.deleted_at)));
 
   return row?.value ?? 0;
 };
@@ -115,13 +114,7 @@ export const getAvailablePipelines = async () => {
 
     const pipelines = await PipelineRepository.findAllByWorkspace(workspaceId);
 
-    let teamPipelineIds: string[] = [];
-
-    if (!canAccessSettings(me.role)) {
-      teamPipelineIds = await TeamRepository.findPipelineIdsByUser(me.id);
-    }
-
-    return { success: true as const, data: { pipelines, teamPipelineIds } };
+    return { success: true as const, data: { pipelines, teamPipelineIds: [] as string[] } };
   } catch (error: any) {
     console.error('Error fetching available pipelines:', error);
     return { success: false as const, error: error?.message || 'Erro ao carregar pipelines' };

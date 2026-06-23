@@ -5,8 +5,8 @@ dotenv.config();
 
 export default {
   dialect: 'postgresql',
-  schemaFilter: 'public',
-  schema: ['./src/schema.ts', './src/admin-schema.ts'],
+  schemaFilter: 'glflow',
+  schema: ['./src/schema.ts'],
   out: './migrations',
 
   dbCredentials: {

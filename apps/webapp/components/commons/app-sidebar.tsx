@@ -19,7 +19,7 @@ const data = {
     {
       title: 'Pipeline',
       icon: InboxIcon,
-      url: '/leads',
+      url: '/pipelines',
     },
     {
       title: 'Clientes',
@@ -30,19 +30,8 @@ const data = {
       title: 'Configurações',
       icon: SettingsIcon,
       items: [
-        { title: 'Empresa', url: '/company' },
         { title: 'Usuários e Permissões', url: '/users' },
-        { title: 'Times', url: '/settings/teams' },
-        { title: 'Produtos', url: '/products' },
-        { title: 'Modelos de Proposta', url: '/proposal-templates' },
-        { title: 'Apps e Integrações', url: '/settings/integrations' },
-        {
-          title: 'Leads',
-          items: [
-            { title: 'Pipelines e Etapas', url: '/settings/pipelines' },
-            { title: 'Motivos de Perda', url: '/settings/loss-reasons' },
-          ],
-        },
+        { title: 'Pipelines e Etapas', url: '/settings/pipelines' },
       ],
     },
   ],

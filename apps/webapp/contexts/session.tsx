@@ -1,22 +1,12 @@
 'use client';
 
-import { createContext, useContext, useEffect } from 'react';
-import { useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { createSession } from '@/actions/auth';
-import { AppLoading, cacheCompanyBranding } from '@/components/commons/loading';
+import { AppLoading } from '@/components/commons/loading';
 import { getMe } from '@/actions/users';
-import { getCompanyProfile } from '@/actions/company';
-import { getOnboardingState } from '@/actions/onboarding';
 import { SignIn } from '@/components/auth/signin';
-import { isCompanyConfigured, type CompanyProfile } from '@/lib/company/profile';
-import { INITIAL_ONBOARDING_STATE, isOnboardingComplete } from '@/lib/onboarding/state';
-
-export type SessionType = {
-  id?: number;
-  name: string;
-};
 
 type Props = {
   children: React.ReactNode;
@@ -25,8 +15,6 @@ type Props = {
 type ProviderValue = {
   user: any;
   loading: boolean;
-  companyProfile: CompanyProfile | null;
-  updateCompanyProfile: (company: CompanyProfile | null) => void;
   handleAuthentication: (email: string, password: string) => Promise<any>;
 };
 
@@ -34,7 +22,6 @@ const SessionContext = createContext<ProviderValue | undefined>(undefined);
 
 export function SessionProvider({ children }: Props) {
   const [user, setUser] = useState<any | null>(null);
-  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [mounted, setMounted] = useState<boolean>(false);
   const pathname = usePathname();
@@ -42,7 +29,6 @@ export function SessionProvider({ children }: Props) {
 
   const publicRoutes = ['/login', '/reset-password', '/privacy-policy', '/invite'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-  const isOnboardingRoute = pathname.startsWith('/onboarding');
 
   useEffect(() => {
     setMounted(true);
@@ -58,58 +44,17 @@ export function SessionProvider({ children }: Props) {
       return;
     }
 
-    let shouldKeepLoading = false;
-
     getMe()
-      .then(async user => {
+      .then(user => {
         setUser(user);
-
-        if (!user) {
-          setCompanyProfile(null);
-          return;
-        }
-
-        const [companyResult, onboardingResult] = await Promise.all([getCompanyProfile(), getOnboardingState()]);
-        const company = companyResult.success ? companyResult.data : null;
-        setCompanyProfile(company);
-
-        const companyConfigured = isCompanyConfigured(company);
-        const onboardingState = onboardingResult.success ? onboardingResult.data : INITIAL_ONBOARDING_STATE;
-        const onboardingComplete = companyConfigured && isOnboardingComplete(onboardingState);
-
-        if (!companyConfigured && !isOnboardingRoute) {
-          shouldKeepLoading = true;
-          router.replace('/onboarding');
-          return;
-        }
-
-        if (isOnboardingRoute && onboardingComplete) {
-          shouldKeepLoading = true;
-          router.replace('/leads');
-        }
       })
       .catch(error => {
         console.error('Session check failed:', error);
       })
       .finally(() => {
-        if (!shouldKeepLoading) {
-          setLoading(false);
-        }
+        setLoading(false);
       });
-  }, [mounted, isPublicRoute, isOnboardingRoute, router]);
-
-  useEffect(() => {
-    if (!companyProfile) {
-      return;
-    }
-
-    cacheCompanyBranding({
-      logoUrl: companyProfile.logoUrl || '',
-      companyName: companyProfile.nomeFantasia || companyProfile.razaoSocial || '',
-      brandColors: companyProfile.brandColors,
-      useLogoColors: companyProfile.useLogoColors,
-    });
-  }, [companyProfile]);
+  }, [mounted, isPublicRoute]);
 
   useEffect(() => {
     if (!mounted || loading) {
@@ -117,7 +62,7 @@ export function SessionProvider({ children }: Props) {
     }
 
     if (user && pathname === '/login') {
-      router.replace('/leads');
+      router.replace('/pipelines');
     }
   }, [mounted, loading, user, pathname, router]);
 
@@ -127,7 +72,7 @@ export function SessionProvider({ children }: Props) {
 
       if (status === 200 || status === 201) {
         setUser(user);
-        router.push('/');
+        router.push('/pipelines');
       }
 
       return { status };
@@ -140,8 +85,6 @@ export function SessionProvider({ children }: Props) {
   const provider_value: ProviderValue = {
     user: user || null,
     loading,
-    companyProfile,
-    updateCompanyProfile: setCompanyProfile,
     handleAuthentication,
   };
 

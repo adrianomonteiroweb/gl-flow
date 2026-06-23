@@ -6,60 +6,74 @@ import { pipelines_table, steps_table, status_table, step_statuses } from './sch
 
 export const DEFAULT_PIPELINE_NAME = 'Comercial';
 
-type StepSeed = { slug: string; name: string; order: string; color: string };
-type StatusSeed = { slug: string; name: string; is_universal: boolean };
+type StatusColor = 'green' | 'red' | 'yellow' | null;
+type StepSeed = { slug: string; name: string; order: string; color: string; is_post_sale: boolean };
+type StatusSeed = { slug: string; name: string; is_universal: boolean; color?: StatusColor };
 type LinkSeed = { step_slug: string; status_slug: string };
 
+// Sales pipeline (prototype "Grupo Linhares Honda"): the salesperson works leads
+// from prospecting up to payment/approval; faturamento and entrega are post-sale
+// stages (is_post_sale) that a `member` can view but not change.
 export const PIPELINE_STEP_SEED: StepSeed[] = [
-  { slug: 'new', name: 'Novo', order: '1', color: 'blue' },
-  { slug: 'qualified', name: 'Qualificação', order: '2', color: 'emerald' },
-  { slug: 'negotiation', name: 'Negociação', order: '3', color: 'purple' },
-  { slug: 'closed', name: 'Fechado', order: '4', color: 'green' },
+  { slug: 'prospeccao', name: 'Prospecção', order: '1', color: 'blue', is_post_sale: false },
+  { slug: 'qualificacao', name: 'Qualificação', order: '2', color: 'emerald', is_post_sale: false },
+  { slug: 'proposta', name: 'Proposta', order: '3', color: 'amber', is_post_sale: false },
+  { slug: 'pagamento', name: 'Pagamento', order: '4', color: 'purple', is_post_sale: false },
+  { slug: 'aprovacao', name: 'Aprovação', order: '5', color: 'indigo', is_post_sale: false },
+  { slug: 'faturamento', name: 'Faturamento', order: '6', color: 'cyan', is_post_sale: true },
+  { slug: 'entrega', name: 'Entrega', order: '7', color: 'green', is_post_sale: true },
 ];
 
 export const PIPELINE_STATUS_SEED: StatusSeed[] = [
-  { slug: 'novo', name: 'Novo', is_universal: true },
-  { slug: 'pending', name: 'Pendente', is_universal: true },
-  { slug: 'em_atendimento', name: 'Em Atendimento', is_universal: true },
-  { slug: 'aguardando_cliente', name: 'Aguardando Cliente', is_universal: true },
-  { slug: 'em_analise', name: 'Em Análise', is_universal: true },
-  { slug: 'concluido', name: 'Concluído', is_universal: true },
-  { slug: 'encerrado', name: 'Encerrado', is_universal: true },
-  { slug: 'aguardando_resposta', name: 'Aguardando Resposta', is_universal: false },
-  { slug: 'analise_viabilidade', name: 'Análise Viabilidade', is_universal: false },
-  { slug: 'sem_viabilidade', name: 'Sem Viabilidade', is_universal: false },
-  { slug: 'viavel_tecnicamente', name: 'Viável Tecnicamente', is_universal: false },
-  { slug: 'qualificado', name: 'Qualificado', is_universal: false },
-  { slug: 'nao_qualificado', name: 'Não Qualificado', is_universal: false },
+  // Universal outcomes — available across every stage.
+  { slug: 'ganha', name: 'Ganha', is_universal: true, color: 'green' },
+  { slug: 'perdida', name: 'Perdida', is_universal: true, color: 'red' },
+  // Prospecção
+  { slug: 'novo', name: 'Novo', is_universal: false },
+  { slug: 'em_contato', name: 'Em Contato', is_universal: false },
+  // Qualificação
+  { slug: 'qualificado', name: 'Qualificado', is_universal: false, color: 'green' },
+  { slug: 'nao_qualificado', name: 'Não Qualificado', is_universal: false, color: 'red' },
+  // Proposta
   { slug: 'proposta_enviada', name: 'Proposta Enviada', is_universal: false },
-  { slug: 'em_analise_cliente', name: 'Em Análise (Cliente)', is_universal: false },
-  { slug: 'proposta_aceita', name: 'Proposta Aceita', is_universal: false },
-  { slug: 'proposta_recusada', name: 'Proposta Recusada', is_universal: false },
-  { slug: 'negociacao_iniciada', name: 'Negociação Iniciada', is_universal: false },
-  { slug: 'aguardando_decisao', name: 'Aguardando Decisão', is_universal: false },
-  { slug: 'aguardando_assinatura', name: 'Aguardando Assinatura', is_universal: false },
-  { slug: 'negociacao_perdida', name: 'Negociação Perdida', is_universal: false },
-  { slug: 'negociacao_ganha', name: 'Negociação Ganha', is_universal: false },
+  { slug: 'em_negociacao', name: 'Em Negociação', is_universal: false, color: 'yellow' },
+  // Pagamento
+  { slug: 'aguardando_pagamento', name: 'Aguardando Pagamento', is_universal: false, color: 'yellow' },
+  { slug: 'financiamento', name: 'Financiamento', is_universal: false },
+  { slug: 'pago', name: 'Pago', is_universal: false, color: 'green' },
+  // Aprovação
+  { slug: 'pendente', name: 'Pendente', is_universal: false, color: 'yellow' },
+  { slug: 'aprovado', name: 'Aprovado', is_universal: false, color: 'green' },
+  { slug: 'reprovado', name: 'Reprovado', is_universal: false, color: 'red' },
+  // Faturamento (pós-venda)
+  { slug: 'a_faturar', name: 'A Faturar', is_universal: false },
+  { slug: 'faturado', name: 'Faturado', is_universal: false, color: 'green' },
+  // Entrega (pós-venda): transporte e emplacamento
+  { slug: 'aguardando_transporte', name: 'Aguardando Transporte', is_universal: false, color: 'yellow' },
+  { slug: 'em_transporte', name: 'Em Transporte', is_universal: false, color: 'yellow' },
+  { slug: 'emplacamento', name: 'Emplacamento', is_universal: false, color: 'yellow' },
+  { slug: 'entregue', name: 'Entregue', is_universal: false, color: 'green' },
 ];
 
 export const PIPELINE_STEP_STATUS_SEED: LinkSeed[] = [
-  { step_slug: 'new', status_slug: 'pending' },
-  { step_slug: 'new', status_slug: 'em_atendimento' },
-  { step_slug: 'new', status_slug: 'aguardando_resposta' },
-  { step_slug: 'new', status_slug: 'analise_viabilidade' },
-  { step_slug: 'qualified', status_slug: 'sem_viabilidade' },
-  { step_slug: 'qualified', status_slug: 'viavel_tecnicamente' },
-  { step_slug: 'qualified', status_slug: 'qualificado' },
-  { step_slug: 'qualified', status_slug: 'nao_qualificado' },
-  { step_slug: 'negotiation', status_slug: 'proposta_enviada' },
-  { step_slug: 'negotiation', status_slug: 'em_analise_cliente' },
-  { step_slug: 'negotiation', status_slug: 'proposta_aceita' },
-  { step_slug: 'negotiation', status_slug: 'proposta_recusada' },
-  { step_slug: 'negotiation', status_slug: 'negociacao_iniciada' },
-  { step_slug: 'negotiation', status_slug: 'aguardando_decisao' },
-  { step_slug: 'negotiation', status_slug: 'aguardando_assinatura' },
-  { step_slug: 'closed', status_slug: 'negociacao_perdida' },
-  { step_slug: 'closed', status_slug: 'negociacao_ganha' },
+  { step_slug: 'prospeccao', status_slug: 'novo' },
+  { step_slug: 'prospeccao', status_slug: 'em_contato' },
+  { step_slug: 'qualificacao', status_slug: 'qualificado' },
+  { step_slug: 'qualificacao', status_slug: 'nao_qualificado' },
+  { step_slug: 'proposta', status_slug: 'proposta_enviada' },
+  { step_slug: 'proposta', status_slug: 'em_negociacao' },
+  { step_slug: 'pagamento', status_slug: 'aguardando_pagamento' },
+  { step_slug: 'pagamento', status_slug: 'financiamento' },
+  { step_slug: 'pagamento', status_slug: 'pago' },
+  { step_slug: 'aprovacao', status_slug: 'pendente' },
+  { step_slug: 'aprovacao', status_slug: 'aprovado' },
+  { step_slug: 'aprovacao', status_slug: 'reprovado' },
+  { step_slug: 'faturamento', status_slug: 'a_faturar' },
+  { step_slug: 'faturamento', status_slug: 'faturado' },
+  { step_slug: 'entrega', status_slug: 'aguardando_transporte' },
+  { step_slug: 'entrega', status_slug: 'em_transporte' },
+  { step_slug: 'entrega', status_slug: 'emplacamento' },
+  { step_slug: 'entrega', status_slug: 'entregue' },
 ];
 
 export type ProvisionResult = {
@@ -111,6 +125,7 @@ export const provisionWorkspacePipeline = async (workspaceId: string, tx?: NodeP
             slug: step.slug,
             order: step.order,
             color: step.color,
+            is_post_sale: step.is_post_sale,
             is_system: true,
             is_active: true,
           })
@@ -136,6 +151,7 @@ export const provisionWorkspacePipeline = async (workspaceId: string, tx?: NodeP
             name: status.name,
             slug: status.slug,
             is_universal: status.is_universal,
+            color: status.color ?? null,
             is_system: true,
             is_active: true,
           })

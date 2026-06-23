@@ -57,7 +57,7 @@ Build alvo final equivalente para webapp isolada: `pnpm exec turbo build --filte
 
 - [apps/webapp](apps/webapp) — `@apps/webapp`. Next.js (App Router) com todo o produto.
 - [packages/db](packages/db) — `@workspace/db`. Drizzle, schema, migrations, repositórios base.
-- [packages/ui](packages/ui) — `@workspace/ui`. shadcn/ui + Tailwind glglflowl + componentes próprios.
+- [packages/ui](packages/ui) - `@workspace/ui`. shadcn/ui + Tailwind global + componentes próprios.
 - [packages/utils](packages/utils) — `@workspace/utils`. Date/text formatters, JWT, AWS, WhatsApp, notifications.
 - [packages/eslint-config](packages/eslint-config) — presets ESLint flat (`base`, `next-js`, `react-internal`).
 - [packages/typescript-config](packages/typescript-config) — `base.json`, `nextjs.json`, `react-library.json`.
@@ -79,7 +79,7 @@ Monorepo:
 - `@workspace/ui/components/<name>` — componentes shadcn (ex.: `@workspace/ui/components/button`).
 - `@workspace/ui/lib/utils` — `cn()`.
 - `@workspace/ui/hooks/<name>` — hooks compartilhados (`use-mobile`).
-- `@workspace/ui/glglflowls.css` — CSS base do design system (importado em [apps/webapp/app/layout.tsx](apps/webapp/app/layout.tsx)).
+- @workspace/ui/globals.css — CSS base do design system (importado em [apps/webapp/app/layout.tsx](apps/webapp/app/layout.tsx)).
 - `@workspace/utils` — re-exports principais (`DateFormatter`, …).
 - Subpaths: `@workspace/utils/text`, `/date`, `/jwt`, `/notifications`, `/agenda`, `/whatsapp`, `/aws/s3`, `/aws/ses`, `/aws/lambda`.
 
@@ -91,7 +91,8 @@ Monorepo:
 
 - **Idioma**: código em inglês; mensagens visíveis ao usuário em pt-BR.
 - **Naming**:
-  - Variáveis, funções, parâmetros, chaves JSON, métodos: `camelCase`.
+  - Variáveis: `snake_case`.
+  - funções, parâmetros, chaves JSON, métodos: `camelCase`.
   - Componentes React, tipos, interfaces, enums: `PascalCase`.
   - Tabelas e colunas Postgres: `snake_case`. Tabelas exportadas em Drizzle: `<plural>_table` (ex.: `leads_table`).
   - Arquivos de componente: `kebab-case.tsx` (ex.: `lead-tasks-section.tsx`).
@@ -112,7 +113,7 @@ Monorepo:
 Estrutura em [apps/webapp/app/](apps/webapp/app):
 
 - **Server Components por padrão**. `'use client'` apenas em arquivos que precisam de hooks, eventos, refs ou APIs do browser.
-- **Layout root**: [apps/webapp/app/layout.tsx](apps/webapp/app/layout.tsx) carrega `@workspace/ui/glglflowls.css`, fontes Google, `<Toaster />` (sonner) e renderiza [apps/webapp/components/commons/providers.tsx](apps/webapp/components/commons/providers.tsx) (Next Themes → Session → Tooltip → Sidebar).
+- **Layout root**: [apps/webapp/app/layout.tsx](apps/webapp/app/layout.tsx) carrega `@workspace/ui/globals.css`, fontes Google, `<Toaster />` (sonner) e renderiza [apps/webapp/components/commons/providers.tsx](apps/webapp/components/commons/providers.tsx) (Next Themes → Session → Tooltip → Sidebar).
 - **`error.tsx` e `not-found.tsx`** são Client Components.
 - **Middleware**: [apps/webapp/middleware.ts](apps/webapp/middleware.ts) valida JWT (`glflow_DOC_AT`) com `jose`; permite rotas públicas (`/login`, `/privacy-policy`, `/reset-password`, `/invite`) e prefixos públicos (`/api/webhook`, `/api/webhooks`); valida `/api/cron/*` com Bearer `CRON_SECRET`.
 - **Instrumentation**: [apps/webapp/instrumentation.ts](apps/webapp/instrumentation.ts) dispara cron de followup a cada 60s **só em dev**.
@@ -230,7 +231,7 @@ Alterar schema → rodar `pnpm --filter @workspace/db db:generate` → commitar 
   - **Custom**: `datatable/` (composto), `input-search`, `password-input`, `submit-button`, `theme-provider`, `user-avatar`, `logos/` (`glflow`, `solfy`, `vexnet`).
 - `cn()` de `@workspace/ui/lib/utils` para classes condicionais (`clsx` + `tailwind-merge`).
 - Ícones: `lucide-react`. Não introduzir outra biblioteca de ícones.
-- Tokens de design em [packages/ui/src/styles/glglflowls.css](packages/ui/src/styles/glglflowls.css) (CSS vars `oklch`, primary `#1260A8`, `--radius: 0.75rem`). Use as classes Tailwind que mapeiam pra essas vars (`bg-primary`, `text-foreground`, `bg-muted`, `border-border`, `bg-sidebar`, `bg-chart-1..5`).
+- Tokens de design em [packages/ui/src/styles/globals.css](packages/ui/src/styles/globals.css) (CSS vars `oklch`, primary `#1260A8`, `--radius: 0.75rem`). Use as classes Tailwind que mapeiam pra essas vars (`bg-primary`, `text-foreground`, `bg-muted`, `border-border`, `bg-sidebar`, `bg-chart-1..5`).
 - Dark mode: `next-themes` já configurado em `Providers`. Para estilizar, usar variant `dark:`.
 - Toasts: `sonner` — `import { toast } from 'sonner'`; `toast.success(...)` / `toast.error(...)`. Já existe `<Toaster />` no root layout.
 - Dialog/Sheet/Drawer: padrão `useState(open)` + `<Dialog open onOpenChange={setOpen}>` (ver [apps/webapp/components/users/](apps/webapp/components/users)).

@@ -11,13 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:introspect": "drizzle-kit introspect",
     "db:check": "drizzle-kit check:pg",
-    "db:migrate": "tsx ./src/migrate.ts",
-    "db:seed": "tsx ./src/seed.ts",
-    "db:seed:account": "tsx ./src/seed-account.ts",
-    "db:apply-pipelines": "tsx ./scripts/apply-pipelines-multitenant.ts",
-    "test:cep-flow": "tsx ./src/test-cep-no-street-flow.ts",
-    "db:apply-roles-member": "tsx ./scripts/apply-roles-member.ts",
-    "db:apply-teams": "tsx ./scripts/apply-teams.ts"
+    "db:migrate": "tsx ./src/migrate.ts"
   },
   "dependencies": {
     "@workspace/eslint-config": "workspace:*",

@@ -15,6 +15,8 @@ type Capabilities = {
   assignLeads: boolean;
   /** Can connect / configure / enable / disable apps in "Apps e Integrações". */
   manageIntegrations: boolean;
+  /** Can move leads into / within post-sale stages (faturamento, entrega, ...). */
+  editPostSaleStages: boolean;
 };
 
 const ROLE_CAPABILITIES: Record<Role, Capabilities> = {
@@ -26,6 +28,7 @@ const ROLE_CAPABILITIES: Record<Role, Capabilities> = {
     restrictedLeadScope: false,
     assignLeads: true,
     manageIntegrations: true,
+    editPostSaleStages: true,
   },
   admin: {
     accessSettings: true,
@@ -35,6 +38,7 @@ const ROLE_CAPABILITIES: Record<Role, Capabilities> = {
     restrictedLeadScope: false,
     assignLeads: true,
     manageIntegrations: true,
+    editPostSaleStages: true,
   },
   member: {
     accessSettings: false,
@@ -44,6 +48,7 @@ const ROLE_CAPABILITIES: Record<Role, Capabilities> = {
     restrictedLeadScope: true,
     assignLeads: false,
     manageIntegrations: false,
+    editPostSaleStages: false,
   },
 };
 
@@ -99,3 +104,5 @@ export const isLeadScopeRestricted = (role: string | null | undefined): boolean 
 export const canAssignLeads = (role: string | null | undefined): boolean => capabilitiesOf(role).assignLeads;
 
 export const canManageIntegrations = (role: string | null | undefined): boolean => capabilitiesOf(role).manageIntegrations;
+
+export const canEditPostSaleStages = (role: string | null | undefined): boolean => capabilitiesOf(role).editPostSaleStages;

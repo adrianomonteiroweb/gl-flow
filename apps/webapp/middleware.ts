@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === '/') {
-    return NextResponse.redirect(new URL('/leads', request.url));
+    return NextResponse.redirect(new URL('/pipelines', request.url));
   }
 
   if (pathname.startsWith('/api/cron')) {

@@ -10,8 +10,6 @@ import { AppLoading } from '@/components/commons/loading';
 import { TooltipProvider } from '@workspace/ui/components/tooltip';
 import { SidebarInset, SidebarProvider } from '@workspace/ui/components/sidebar';
 import { SessionProvider } from '@/contexts/session';
-import { CompanyBrandTheme } from '@/components/company/company-brand-theme';
-import { OnboardingReminder } from '@/components/onboarding/onboarding-reminder';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -21,25 +19,16 @@ export function Providers({ children }: ProvidersProps) {
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
 
-  // Define public routes that don't require the sidebar layout
-  const publicRoutes = ['/login', '/reset-password', '/privacy-policy'];
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-
-  // The document print view renders chrome-less (no sidebar) for clean PDF output.
-  // Auth is still enforced by the server action that loads the document.
-  const isPrintRoute = pathname.startsWith('/proposals/') && pathname.endsWith('/print');
-  const isOnboardingRoute = pathname.startsWith('/onboarding');
-  const isBareLayout = isPublicRoute || isPrintRoute || isOnboardingRoute;
+  const publicRoutes = ['/login', '/reset-password', '/privacy-policy', '/invite'];
+  const isBareLayout = publicRoutes.some(route => pathname.startsWith(route));
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Always render the same structure to avoid hook order changes
   return (
     <NextThemesProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <SessionProvider>
-        <CompanyBrandTheme />
         <TooltipProvider>
           {!mounted ? (
             <AppLoading />
@@ -52,7 +41,6 @@ export function Providers({ children }: ProvidersProps) {
               <SidebarInset>
                 <Suspense fallback={<AppLoading />}>{children}</Suspense>
               </SidebarInset>
-              <OnboardingReminder />
             </SidebarProvider>
           )}
         </TooltipProvider>

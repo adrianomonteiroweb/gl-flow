@@ -5,35 +5,14 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { DndContext, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { getStepsWithStatuses } from '@/actions/steps';
+import { buildKanbanColumns, resolveLeadColumnId, type ClosedInfo, type KanbanColumn as KanbanColumnDef, type Stage } from '@/utils/kanban-columns';
+import type { LeadItem } from '@/components/leads/lead-card-content';
+import { LeadDetailsSurface } from '@/components/leads/lead-details-surface';
 
 import { KanbanColumn } from './column';
 
-interface Lead {
-  lead: {
-    id: string;
-    name: string;
-    phone: string;
-    [key: string]: any;
-  };
-  chat?: {
-    id: string;
-    step?: string;
-    status?: string;
-    assignee_id?: string;
-    updated_at?: string;
-    [key: string]: any;
-  };
-  assignee?: {
-    id: string;
-    name: string;
-    [key: string]: any;
-  };
-  tasks?: { due_date: string; completed_at: string | null }[];
-  [key: string]: any;
-}
-
 interface KanbanBoardProps {
-  leads: Lead[];
+  leads: LeadItem[];
   loading?: boolean;
   pipelineId?: string | null;
   onStepChange?: (leadId: string, newStep: string, newStatus?: string, isLost?: boolean) => void;
@@ -42,26 +21,15 @@ interface KanbanBoardProps {
   onUpdated?: () => void;
 }
 
-interface Column {
-  id: string;
-  label: string;
-  configKey?: string;
-  color?: string | null;
-  realStep: string;
-  realStatus?: string;
-}
-
-interface ClosedInfo {
-  stepId: string;
-  wonStatusId?: string;
-  lostStatusId?: string;
-}
-
 export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, loadedAt, stepFilter, onUpdated }: KanbanBoardProps) => {
-  const [leadsState, setLeadsState] = useState<Lead[]>(leads);
-  const [columns, setColumns] = useState<Column[]>([]);
+  const [leadsState, setLeadsState] = useState<LeadItem[]>(leads);
+  const [columns, setColumns] = useState<KanbanColumnDef[]>([]);
   const [closedInfo, setClosedInfo] = useState<ClosedInfo | null>(null);
   const [isLoadingSteps, setIsLoadingSteps] = useState(true);
+
+  const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null);
+  const [detailsTab, setDetailsTab] = useState<string | undefined>(undefined);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const optimisticUpdateRef = useRef<string | null>(null);
 
@@ -72,26 +40,12 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
         const result = await getStepsWithStatuses(pipelineId ?? undefined);
 
         if (result.success && result.data) {
-          const stages = result.data as any[];
-          const closedStage = stages.find(s => s.slug === 'closed');
-          const wonStatusId = closedStage?.statuses?.find((st: any) => st.slug === 'negociacao_ganha')?.id;
-          const lostStatusId = closedStage?.statuses?.find((st: any) => st.slug === 'negociacao_perdida')?.id;
-
-          setClosedInfo(closedStage ? { stepId: closedStage.id, wonStatusId, lostStatusId } : null);
-
-          const expanded: Column[] = [];
-          stages.forEach((s: any) => {
-            if (s.slug === 'closed') {
-              expanded.push({ id: 'closed_won', label: 'Fechado – Ganho', configKey: 'closed_won', color: s.color, realStep: s.id, realStatus: wonStatusId });
-              expanded.push({ id: 'closed_lost', label: 'Fechado – Perdido', configKey: 'closed_lost', color: 'red', realStep: s.id, realStatus: lostStatusId });
-            } else {
-              expanded.push({ id: s.id, label: s.name, configKey: s.slug ?? undefined, color: s.color, realStep: s.id });
-            }
-          });
-
-          setColumns(expanded);
+          const { columns: built, closedInfo: builtClosedInfo } = buildKanbanColumns(result.data as Stage[]);
+          setColumns(built);
+          setClosedInfo(builtClosedInfo);
         } else {
           setColumns([]);
+          setClosedInfo(null);
         }
       } catch (error) {
         console.error('Error fetching steps:', error);
@@ -116,22 +70,16 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
   );
 
   const leadsByColumn = useMemo(() => {
-    const grouped: Record<string, Lead[]> = {};
+    const grouped: Record<string, LeadItem[]> = {};
 
     columns.forEach(column => {
       grouped[column.id] = [];
     });
 
     leadsState.forEach(lead => {
-      const stepId = lead.chat?.step;
+      const resolved = resolveLeadColumnId(lead.chat?.step, lead.chat?.status, closedInfo);
+      const key = resolved && grouped[resolved] !== undefined ? resolved : columns[0]?.id;
 
-      if (closedInfo && stepId === closedInfo.stepId) {
-        const bucketId = lead.chat?.status === closedInfo.lostStatusId ? 'closed_lost' : 'closed_won';
-        (grouped[bucketId] ??= []).push(lead);
-        return;
-      }
-
-      const key = stepId && grouped[stepId] !== undefined ? stepId : columns[0]?.id;
       if (key) {
         (grouped[key] ??= []).push(lead);
       }
@@ -139,6 +87,52 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
 
     return grouped;
   }, [leadsState, columns, closedInfo]);
+
+  const applyMove = useCallback(
+    (leadId: string, target: KanbanColumnDef) => {
+      const leadIndex = leadsState.findIndex(l => l.lead?.id === leadId);
+
+      if (leadIndex === -1) {
+        return;
+      }
+
+      const lead = leadsState[leadIndex];
+
+      if (!lead || !lead.lead) {
+        return;
+      }
+
+      const currentColumnId = resolveLeadColumnId(lead.chat?.step, lead.chat?.status, closedInfo);
+
+      if (currentColumnId === target.id) {
+        return;
+      }
+
+      const updatedLeads = [...leadsState];
+      updatedLeads[leadIndex] = {
+        ...lead,
+        chat: lead.chat
+          ? {
+              ...lead.chat,
+              step: target.realStep,
+              status: target.realStatus ?? lead.chat.status,
+              id: lead.chat.id || '',
+            }
+          : {
+              id: '',
+              step: target.realStep,
+              status: target.realStatus,
+            },
+      };
+      setLeadsState(updatedLeads);
+      optimisticUpdateRef.current = leadId;
+
+      if (onStepChange) {
+        onStepChange(leadId, target.realStep, target.realStatus, target.isLost);
+      }
+    },
+    [leadsState, onStepChange, closedInfo]
+  );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -149,63 +143,35 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
       }
 
       const leadId = active.id as string;
-      const targetColumnId = over.id as string;
+      const target = columns.find(c => c.id === (over.id as string));
 
-      const targetColumn = columns.find(c => c.id === targetColumnId);
-      if (!targetColumn) {
+      if (!target) {
         return;
       }
 
-      const leadIndex = leadsState.findIndex(l => l.lead?.id === leadId);
-      if (leadIndex === -1) {
-        return;
-      }
-
-      const lead = leadsState[leadIndex];
-      if (!lead || !lead.lead) {
-        return;
-      }
-
-      const currentColumnId =
-        closedInfo && lead.chat?.step === closedInfo.stepId
-          ? lead.chat?.status === closedInfo.lostStatusId
-            ? 'closed_lost'
-            : 'closed_won'
-          : lead.chat?.step;
-
-      if (currentColumnId === targetColumnId) {
-        return;
-      }
-
-      const realStep = targetColumn.realStep;
-      const realStatus = targetColumn.realStatus;
-      const isLost = targetColumnId === 'closed_lost';
-
-      const updatedLeads = [...leadsState];
-      updatedLeads[leadIndex] = {
-        ...lead,
-        chat: lead.chat
-          ? {
-              ...lead.chat,
-              step: realStep,
-              status: realStatus ?? lead.chat.status,
-              id: lead.chat.id || '',
-            }
-          : {
-              id: '',
-              step: realStep,
-              status: realStatus,
-            },
-      };
-      setLeadsState(updatedLeads);
-      optimisticUpdateRef.current = leadId;
-
-      if (onStepChange) {
-        onStepChange(leadId, realStep, realStatus, isLost);
-      }
+      applyMove(leadId, target);
     },
-    [leadsState, onStepChange, columns, closedInfo]
+    [columns, applyMove]
   );
+
+  const handleMoveStage = useCallback(
+    (item: LeadItem, target: KanbanColumnDef) => {
+      applyMove(item.lead.id, target);
+    },
+    [applyMove]
+  );
+
+  const handleOpenDetails = useCallback((item: LeadItem, tab?: string) => {
+    const chatId = item.chat?.id;
+
+    if (chatId) {
+      sessionStorage.setItem(`leads-read-${chatId}`, new Date().toISOString());
+    }
+
+    setSelectedLead(item);
+    setDetailsTab(tab);
+    setDetailsOpen(true);
+  }, []);
 
   useEffect(() => {
     if (optimisticUpdateRef.current === null) {
@@ -233,9 +199,22 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
         className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full"
         style={{ gridTemplateColumns: colCount > 2 ? `repeat(${colCount}, minmax(0, 1fr))` : undefined }}>
         {visibleColumns.map(column => (
-          <KanbanColumn key={column.id} step={{ id: column.id, label: column.label, configKey: column.configKey, color: column.color }} leads={leadsByColumn[column.id] || []} loading={loading} loadedAt={loadedAt} onUpdated={onUpdated} />
+          <KanbanColumn
+            key={column.id}
+            step={{ id: column.id, label: column.label, configKey: column.configKey, color: column.color }}
+            leads={leadsByColumn[column.id] || []}
+            loading={loading}
+            loadedAt={loadedAt}
+            columns={columns}
+            closedInfo={closedInfo}
+            onUpdated={onUpdated}
+            onOpenDetails={handleOpenDetails}
+            onMoveStage={handleMoveStage}
+          />
         ))}
       </div>
+
+      <LeadDetailsSurface item={selectedLead} tab={detailsTab} open={detailsOpen} onOpenChange={setDetailsOpen} />
     </DndContext>
   );
 };

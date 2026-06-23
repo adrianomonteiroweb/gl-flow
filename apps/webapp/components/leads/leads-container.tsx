@@ -13,6 +13,7 @@ import { getAvailablePipelines } from '@/actions/pipelines';
 import { useSearchParams } from '@/hooks/use-search-params';
 import type { Pipeline } from '@/components/pipelines/types';
 import { useLeadsSSE } from '@/hooks/use-leads-sse';
+import { useLeadsPreferences } from '@/hooks/use-leads-preferences';
 import { useSessionContext } from '@/contexts/session';
 import { canAssignLeads } from '@/lib/auth/permissions';
 import { LossReasonModal } from '@/components/loss-reasons/loss-reason-modal';
@@ -23,20 +24,8 @@ import { KanbanBoard } from './kanban/board';
 import { ViewToggle, ViewType } from './view-toggle';
 import { LeadsFilterBar } from './leads-filter-bar';
 
-const VIEW_STORAGE_KEY = 'leads-view-preference';
-
-const getStoredView = (): ViewType => {
-  if (typeof window === 'undefined') {
-    return 'list';
-  }
-
-  const saved = localStorage.getItem(VIEW_STORAGE_KEY) as ViewType | null;
-
-  return saved && ['list', 'kanban'].includes(saved) ? saved : 'list';
-};
-
 export function LeadsContainer() {
-  const [view, setView] = useState<ViewType>('list');
+  const { view, setView, pipelineId: selectedPipelineId, setPipelineId: setSelectedPipelineId, teamFilter, setTeamFilter } = useLeadsPreferences();
 
   const [loadedAt] = useState(() => {
     const STORAGE_KEY = 'leads-loaded-at';
@@ -60,8 +49,6 @@ export function LeadsContainer() {
   const [error, setError] = useState<string | null>(null);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [teamPipelineIds, setTeamPipelineIds] = useState<string[]>([]);
-  const [teamFilterActive, setTeamFilterActive] = useState(false);
-  const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
   const [pendingLostChange, setPendingLostChange] = useState<{
     leadId: string;
     chatId: string;
@@ -73,6 +60,7 @@ export function LeadsContainer() {
 
   const canDistribute = canAssignLeads(user?.role);
   const hasTeamFilter = teamPipelineIds.length > 0;
+  const teamFilterActive = teamFilter ?? hasTeamFilter;
 
   const q = params.q || '';
   const steps = params.steps ? String(params.steps).split(',').filter(Boolean) : [];
@@ -97,10 +85,6 @@ export function LeadsContainer() {
   useLeadsSSE();
 
   useEffect(() => {
-    setView(getStoredView());
-  }, []);
-
-  useEffect(() => {
     let active = true;
 
     (async () => {
@@ -111,19 +95,8 @@ export function LeadsContainer() {
       }
 
       const { pipelines: rawList, teamPipelineIds: teamIds } = res.data;
-      const list = rawList as Pipeline[];
-      setPipelines(list);
+      setPipelines(rawList as Pipeline[]);
       setTeamPipelineIds(teamIds);
-
-      const hasTeam = teamIds.length > 0;
-      setTeamFilterActive(hasTeam);
-
-      const pool = hasTeam ? list.filter((p: Pipeline) => teamIds.includes(p.id)) : list;
-      const preferredId = pool[0]?.id ?? list[0]?.id ?? null;
-
-      if (active) {
-        setSelectedPipelineId(preferredId);
-      }
     })();
 
     return () => {
@@ -132,17 +105,17 @@ export function LeadsContainer() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!hasTeamFilter) {
+    if (pipelines.length === 0) {
       return;
     }
 
     const pool = teamFilterActive ? pipelines.filter(p => teamPipelineIds.includes(p.id)) : pipelines;
-    const currentStillVisible = pool.some(p => p.id === selectedPipelineId);
+    const currentStillVisible = !!selectedPipelineId && pool.some(p => p.id === selectedPipelineId);
 
     if (!currentStillVisible) {
-      setSelectedPipelineId(pool[0]?.id ?? null);
+      setSelectedPipelineId(pool[0]?.id ?? pipelines[0]?.id ?? null);
     }
-  }, [teamFilterActive]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pipelines, teamPipelineIds, teamFilterActive, selectedPipelineId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchKanbanData = useCallback(async () => {
     setKanbanLoading(true);
@@ -267,7 +240,6 @@ export function LeadsContainer() {
 
   const handleViewChange = (newView: ViewType) => {
     setView(newView);
-    localStorage.setItem(VIEW_STORAGE_KEY, newView);
     setError(null);
   };
 
@@ -316,7 +288,7 @@ export function LeadsContainer() {
             size="sm"
             variant="outline"
             pressed={teamFilterActive}
-            onPressedChange={setTeamFilterActive}
+            onPressedChange={setTeamFilter}
             className={cn(
               'gap-1.5 rounded-full px-3 h-7 text-xs font-medium border transition-colors',
               teamFilterActive

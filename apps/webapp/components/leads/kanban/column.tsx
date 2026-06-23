@@ -4,37 +4,21 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Filter, Handshake, Trophy, UserPlus, XCircle } from 'lucide-react';
 import { getStepColorClasses } from '@/lib/step-colors';
-import { KanbanCard } from './card';
+import type { LeadItem } from '@/components/leads/lead-card-content';
+import type { ClosedInfo, KanbanColumn as KanbanColumnDef } from '@/utils/kanban-columns';
 
-interface Lead {
-  lead: {
-    id: string;
-    name: string;
-    phone: string;
-    [key: string]: any;
-  };
-  chat?: {
-    id: string;
-    step?: string;
-    status?: string;
-    assignee_id?: string;
-    updated_at?: string;
-    [key: string]: any;
-  };
-  assignee?: {
-    id: string;
-    name: string;
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
+import { KanbanCard } from './card';
 
 interface KanbanColumnProps {
   step: { id: string; label: string; configKey?: string; color?: string | null };
-  leads: Lead[];
+  leads: LeadItem[];
   loading?: boolean;
   loadedAt: string;
+  columns: KanbanColumnDef[];
+  closedInfo: ClosedInfo | null;
   onUpdated?: () => void;
+  onOpenDetails: (item: LeadItem, tab?: string) => void;
+  onMoveStage: (item: LeadItem, target: KanbanColumnDef) => void;
 }
 
 const getStepIcon = (slug: string | undefined, iconClass: string) => {
@@ -56,7 +40,7 @@ const getStepIcon = (slug: string | undefined, iconClass: string) => {
   }
 };
 
-export const KanbanColumn = ({ step, leads, loading, loadedAt, onUpdated }: KanbanColumnProps) => {
+export const KanbanColumn = ({ step, leads, loading, loadedAt, columns, closedInfo, onUpdated, onOpenDetails, onMoveStage }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: step.id,
   });
@@ -102,7 +86,16 @@ export const KanbanColumn = ({ step, leads, loading, loadedAt, onUpdated }: Kanb
               </div>
             )}
             {validLeads.map(lead => (
-              <KanbanCard key={lead.lead.id} lead={lead} loadedAt={loadedAt} onUpdated={onUpdated} />
+              <KanbanCard
+                key={lead.lead.id}
+                lead={lead}
+                loadedAt={loadedAt}
+                columns={columns}
+                closedInfo={closedInfo}
+                onUpdated={onUpdated}
+                onOpenDetails={onOpenDetails}
+                onMoveStage={onMoveStage}
+              />
             ))}
           </div>
         </SortableContext>

@@ -1,0 +1,56 @@
+{
+  "name": "glhonda-monorepo",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "autoprefixer": "^10.4.21",
+    "dotenv": "^16.5.0",
+    "postcss": "^8.5.3",
+    "prettier": "^3.5.1",
+    "tailwindcss": "^4.0.8",
+    "tsx": "^4.19.4",
+    "turbo": "^2.4.2",
+    "typescript": "5.7.3"
+  },
+  "packageManager": "pnpm@10.4.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "nanoid": "^5.1.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@sentry/cli",
+      "@tailwindcss/oxide",
+      "core-js-pure",
+      "esbuild",
+      "sharp"
+    ],
+    "overrides": {
+      "fast-xml-parser": ">=5.3.5",
+      "basic-ftp": ">=5.2.0",
+      "handlebars": ">=4.7.9",
+      "jws": ">=3.2.3",
+      "tar": ">=7.5.11",
+      "lodash": ">=4.18.0",
+      "lodash-es": ">=4.18.0",
+      "minimatch": ">=9.0.7",
+      "brace-expansion": ">=2.0.3",
+      "postcss": ">=8.5.10",
+      "flatted": ">=3.4.2",
+      "picomatch": ">=2.3.2"
+    }
+  }
+}

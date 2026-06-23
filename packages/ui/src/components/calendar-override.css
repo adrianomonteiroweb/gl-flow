@@ -1,0 +1,21 @@
+:root {
+  /* Força contraste para o dia selecionado no calendário */
+}
+
+button[aria-selected='true'],
+button[aria-selected='true'].day,
+button.day[aria-selected='true'] {
+  background-color: rgb(var(--primary)) !important;
+  color: rgb(var(--primary-foreground)) !important;
+  z-index: 2;
+}
+
+button[aria-selected='true'].day-outside {
+  color: rgb(var(--muted-foreground)) !important;
+}
+
+/* Garante que o foco não sobreponha o selecionado */
+button[aria-selected='true']:focus {
+  outline: 2px solid rgb(var(--primary)) !important;
+  outline-offset: 2px;
+}

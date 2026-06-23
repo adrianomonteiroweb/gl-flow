@@ -1,0 +1,32 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "glglhondalEnv": [
+    "AGENDA_APP_BASE_URL",
+    "CONSULTAS_APP_BASE_URL",
+    "CONEXA_API_TOKEN",
+    "AMPLIFY_AWS_BUCKET_NAME",
+    "AMPLIFY_AWS_ACCESS_KEY",
+    "AMPLIFY_AWS_SECRET_KEY",
+    "DATABASE_URL",
+    "TOKEN_KEY",
+    "LOCAL"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

@@ -1,0 +1,940 @@
+/* Cores baseadas na identidade visual da logo LIM */
+:root {
+  --lim-primary: rgb(233 69 119); /* Rosa principal da logo */
+  --lim-primary-hover: rgb(199 48 95); /* Rosa mais escuro para hover */
+  --lim-secondary: rgb(165 164 164); /* Cinza da logo */
+  --lim-neutral: rgb(247 248 249); /* Cinza claro para backgrounds */
+}
+
+/* Headers do calendário com melhor contraste */
+.calendar-theme .rbc-header {
+  color: var(--lim-secondary) !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid rgba(165, 164, 164, 0.2) !important;
+}
+
+.dark .calendar-theme .rbc-header {
+  color: rgb(200 200 200) !important;
+  border-bottom: 1px solid rgba(165, 164, 164, 0.3) !important;
+}
+
+/* Botões de navegação do calendário */
+.calendar-theme .rbc-btn-group button {
+  border-color: rgba(233, 69, 119, 0.3) !important;
+  color: var(--lim-primary) !important;
+}
+
+.calendar-theme .rbc-btn-group button:hover {
+  background-color: rgba(233, 69, 119, 0.1) !important;
+  border-color: var(--lim-primary) !important;
+}
+
+.calendar-theme .rbc-btn-group button.rbc-active {
+  background-color: var(--lim-primary) !important;
+  border-color: var(--lim-primary) !important;
+  color: white !important;
+}
+
+/* Melhor estilo para slots de tempo */
+.calendar-theme .rbc-time-slot {
+  border-top: 1px solid rgba(165, 164, 164, 0.1) !important;
+}
+
+.dark .calendar-theme .rbc-time-slot {
+  border-top: 1px solid rgba(165, 164, 164, 0.15) !important;
+}
+
+/* Mais sutil, com padding/margin para melhor visualização */
+.calendar-theme .rbc-event {
+  background-color: rgba(233, 69, 119, 0.12) !important; /* cor mais clara */
+  border: 1.5px solid rgb(233 69 119) !important;
+  color: #e94577 !important;
+  padding: 2px 4px !important;
+  margin-bottom: 4px !important;
+  margin-top: 2px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px 0 rgba(233, 69, 119, 0.07);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s;
+}
+
+.calendar-theme .rbc-event:hover {
+  background-color: rgba(233, 69, 119, 0.22) !important;
+  border-color: #c7305f !important;
+  color: #ffffff !important; /* Mantém o texto visível e forte */
+  box-shadow: 0 4px 12px 0 rgba(233, 69, 119, 0.13);
+  cursor: pointer;
+}
+
+.calendar-theme .rbc-event-calendar {
+  background-color: rgb(233 69 119) !important;
+  border-color: rgb(233 69 119) !important;
+}
+
+.calendar-theme .rbc-event-calendar-l {
+  border-radius: 5px 0 0 5px;
+}
+
+.calendar-theme .rbc-event-calendar-r {
+  border-radius: 0 5px 5px 0;
+}
+
+/* Availability Calendar Styles - Green for available slots */
+.calendar-with-appointments button.has-availability {
+  position: relative !important;
+}
+
+.calendar-with-appointments button.has-availability::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 2px !important;
+  left: calc(50% - 4px) !important;
+  transform: translateX(-50%) !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background-color: #22c55e !important;
+  pointer-events: none !important;
+  z-index: 11 !important;
+  display: block !important;
+}
+
+/* Appointments Calendar Styles - Primary color for booked slots */
+.calendar-with-appointments button.has-appointments {
+  position: relative !important;
+}
+
+.calendar-with-appointments button.has-appointments::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0px !important;
+  left: calc(50%) !important;
+  transform: translateX(-50%) !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background-color: rgb(233 69 119) !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+.calendar-theme .rbc-event-calendar-c {
+  border-radius: 0;
+}
+
+.calendar-theme .rbc-event:hover {
+  background-color: rgb(199 48 95) !important;
+  border-color: rgb(199 48 95) !important;
+  cursor: pointer;
+}
+
+.calendar-theme .rbc-event.rbc-selected {
+  background-color: rgb(199 48 95) !important;
+  border-color: rgb(199 48 95) !important;
+}
+
+.calendar-theme .rbc-agenda-view .rbc-agenda-content .rbc-agenda-event-cell:hover {
+  background-color: rgba(233, 69, 119, 0.1) !important;
+  cursor: pointer;
+}
+
+.dark .calendar-theme .rbc-agenda-view .rbc-agenda-content .rbc-agenda-event-cell:hover {
+  background-color: rgba(233, 69, 119, 0.15) !important;
+  cursor: pointer;
+}
+
+.calendar-theme .rbc-today {
+  background-color: rgb(247 248 249) !important;
+  border: 2px solid rgb(165 164 164) !important;
+  box-sizing: border-box; /* garante que bordas não desalinhem o grid */
+  border-radius: 4px;
+}
+
+.dark .calendar-theme .rbc-today {
+  background-color: rgba(165, 164, 164, 0.15) !important;
+  border: 2px solid rgb(165 164 164) !important;
+  box-sizing: border-box;
+  border-radius: 4px;
+}
+
+.calendar-theme .rbc-off-range-bg {
+  background-color: rgb(229 231 235) !important;
+}
+
+.dark .calendar-theme .rbc-off-range-bg {
+  background-color: rgba(64, 64, 64, 0.3) !important;
+}
+
+/* Selected Date Style - More transparent background */
+.calendar-with-appointments button[aria-selected='true'] {
+  background-color: rgba(233, 69, 119, 0.15) !important;
+  border-color: rgb(233, 69, 119) !important;
+  color: rgb(233, 69, 119) !important;
+}
+
+.calendar-with-appointments button[aria-selected='true']:hover {
+  background-color: rgba(233, 69, 119, 0.25) !important;
+}
+
+.dark .calendar-with-appointments button[aria-selected='true'] {
+  background-color: rgba(233, 69, 119, 0.2) !important;
+  border-color: rgb(233, 69, 119) !important;
+  color: rgb(233, 69, 119) !important;
+}
+
+.dark .calendar-with-appointments button[aria-selected='true']:hover {
+  background-color: rgba(233, 69, 119, 0.3) !important;
+}
+
+/* Estilos base do calendário */
+.calendar-container {
+  overflow: hidden;
+}
+
+/* Estabilização do container do calendário */
+.calendar-container {
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  overflow: hidden !important;
+}
+
+.calendar-wrapper {
+  position: relative;
+  overflow: hidden !important;
+  contain: layout size style !important;
+}
+
+.calendar-wrapper.mobile-calendar {
+  max-height: calc(100vh - 200px) !important;
+  min-height: 400px !important;
+}
+
+.calendar-wrapper.desktop-calendar {
+  max-height: 800px !important;
+  min-height: 600px !important;
+  height: 700px !important;
+}
+
+.calendar-theme.responsive-calendar {
+  transition: font-size 0.3s ease-in-out;
+  will-change: auto;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Forçar dimensões do calendário */
+.calendar-wrapper .rbc-calendar {
+  height: 100% !important;
+  width: 100% !important;
+  max-height: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+/* Prevenir layout shifts */
+.rbc-calendar {
+  transition: none !important;
+  contain: layout size style !important;
+}
+
+/* Responsividade para o react-big-calendar */
+.responsive-calendar {
+  font-size: 14px;
+}
+
+/* Mobile styles */
+@media (max-width: 767px) {
+  .responsive-calendar {
+    font-size: 12px;
+  }
+
+  /* Toolbar responsiva */
+  .rbc-toolbar {
+    flex-direction: column !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .rbc-toolbar-label {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    order: -1;
+    margin-bottom: 8px;
+  }
+
+  .rbc-btn-group {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  .rbc-btn-group button {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    min-width: auto !important;
+  }
+
+  /* Month view responsivo */
+  .rbc-month-view {
+    font-size: 11px !important;
+  }
+
+  .rbc-date-cell {
+    padding: 2px !important;
+    min-height: 40px !important;
+  }
+
+  .rbc-date-cell > a {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+  }
+
+  .rbc-event {
+    font-size: 10px !important;
+    padding: 1px 3px !important;
+    margin: 1px 0 !important;
+    border-radius: 3px !important;
+  }
+
+  .rbc-event-content {
+    font-size: 10px !important;
+  }
+
+  /* Header do mês */
+  .rbc-header {
+    padding: 8px 2px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+  }
+
+  /* Day view responsivo */
+  .rbc-time-view {
+    font-size: 11px !important;
+  }
+
+  .rbc-time-header {
+    flex-direction: column !important;
+  }
+
+  .rbc-time-header-content {
+    border-left: none !important;
+  }
+
+  .rbc-time-content {
+    flex: 1 !important;
+  }
+
+  .rbc-timeslot-group {
+    min-height: 40px !important;
+  }
+
+  .rbc-time-slot {
+    font-size: 10px !important;
+  }
+
+  /* Agenda view responsivo */
+  .rbc-agenda-view {
+    font-size: 12px !important;
+  }
+
+  .rbc-agenda-view table {
+    width: 100% !important;
+  }
+
+  .rbc-agenda-time-cell {
+    width: 80px !important;
+    font-size: 11px !important;
+  }
+
+  .rbc-agenda-event-cell {
+    font-size: 12px !important;
+  }
+
+  .rbc-agenda-date-cell {
+    width: 80px !important;
+    font-size: 11px !important;
+  }
+
+  /* Popup para eventos em mobile */
+  .rbc-overlay {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    border-radius: 8px !important;
+    border: 1px solid #e5e7eb !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+  }
+
+  .rbc-overlay-header {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+
+  /* Scrollbar customizada para mobile */
+  .rbc-time-content::-webkit-scrollbar {
+    width: 4px !important;
+  }
+
+  .rbc-time-content::-webkit-scrollbar-track {
+    background: #f1f5f9 !important;
+  }
+
+  .rbc-time-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1 !important;
+    border-radius: 2px !important;
+  }
+
+  /* Mobile: estabilizar altura */
+  .calendar-container {
+    min-height: 450px;
+    max-height: calc(100vh - 180px);
+  }
+
+  .rbc-calendar {
+    height: 100% !important;
+    max-height: calc(100vh - 250px) !important;
+  }
+
+  /* Prevenir overflow em mobile */
+  .rbc-month-view {
+    overflow: hidden !important;
+  }
+
+  .rbc-date-cell {
+    overflow: hidden !important;
+  }
+
+  /* Força visibilidade dos eventos em mobile */
+  .mobile-calendar .rbc-event {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background-color: #e94577 !important;
+    color: white !important;
+    border: 1px solid #c7305f !important;
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+    margin: 1px 0 !important;
+    border-radius: 3px !important;
+    line-height: 1.2 !important;
+    min-height: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-calendar .rbc-event-content {
+    display: block !important;
+    visibility: visible !important;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Força overflow visível para mostrar eventos */
+  .mobile-calendar .rbc-month-view {
+    overflow: visible !important;
+  }
+
+  .mobile-calendar .rbc-date-cell {
+    overflow: visible !important;
+  }
+
+  .mobile-calendar .rbc-row-content {
+    overflow: visible !important;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .responsive-calendar {
+    font-size: 13px;
+  }
+
+  .rbc-toolbar-label {
+    font-size: 18px !important;
+  }
+
+  .rbc-btn-group button {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+  }
+
+  .rbc-date-cell {
+    min-height: 50px !important;
+  }
+
+  .rbc-event {
+    font-size: 11px !important;
+    padding: 2px 4px !important;
+  }
+}
+
+/* Desktop Styles (1024px até 1279px) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .calendar-with-appointments {
+    font-size: 16px !important;
+  }
+
+  .calendar-with-appointments .rdp-day {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 14px !important;
+  }
+
+  .calendar-with-appointments .rdp-nav_button {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+/* Large Desktop Styles (1280px e acima) */
+@media (min-width: 1280px) {
+  .calendar-with-appointments {
+    font-size: 16px !important;
+  }
+
+  .calendar-with-appointments .rdp-day {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 14px !important;
+  }
+
+  .calendar-with-appointments .rdp-nav_button {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .calendar-with-appointments .rdp-caption_label {
+    font-size: 18px !important;
+  }
+}
+
+/* Melhorias gerais de responsividade */
+.calendar-with-appointments .rdp-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.calendar-with-appointments .rdp-month {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.calendar-with-appointments .rdp-caption {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.calendar-with-appointments .rdp-nav {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.calendar-with-appointments .rdp-caption_label {
+  flex: 1 !important;
+  text-align: center !important;
+}
+
+/* Centralização e alinhamento específicos */
+.calendar-with-appointments {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.calendar-with-appointments .rdp {
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Garantir que os dias da semana estejam alinhados */
+.calendar-with-appointments .rdp-head {
+  width: 100% !important;
+}
+
+.calendar-with-appointments .rdp-head_row {
+  display: flex !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+.calendar-with-appointments .rdp-head_cell {
+  flex: 1 !important;
+  text-align: center !important;
+}
+
+/* Alinhamento das linhas de dias */
+.calendar-with-appointments .rdp-tbody {
+  width: 100% !important;
+}
+
+.calendar-with-appointments .rdp-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+.calendar-with-appointments .rdp-cell {
+  flex: 1 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+/* Garantir que os indicadores sejam sempre visíveis */
+.calendar-with-appointments button.has-appointments::before,
+.calendar-with-appointments button.has-availability::after {
+  display: block !important;
+}
+
+/* Hover states responsivos */
+@media (hover: hover) {
+  .calendar-with-appointments .rdp-day_button:hover {
+    background-color: rgba(233, 69, 119, 0.1) !important;
+    transition: background-color 0.2s ease !important;
+  }
+}
+
+/* Touch devices - remover hover states */
+@media (hover: none) {
+  .calendar-with-appointments .rdp-day_button:hover {
+    background-color: transparent !important;
+  }
+}
+
+/* Melhorias gerais de acessibilidade */
+.rbc-btn-group button:focus {
+  outline: 2px solid #e94577 !important;
+  outline-offset: 2px !important;
+}
+
+.rbc-event:focus {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 1px !important;
+}
+
+/* Animações suaves */
+.rbc-event {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.rbc-event:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Correções para touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .rbc-event:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .rbc-show-more {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    background-color: #f3f4f6 !important;
+    border-radius: 4px !important;
+    margin-top: 2px !important;
+  }
+}
+
+/* Força estabilidade dimensional do calendário */
+.rbc-calendar * {
+  box-sizing: border-box !important;
+}
+
+/* Prevenir re-flows durante mudanças de viewport */
+@media (max-width: 767px) {
+  .calendar-theme.responsive-calendar {
+    transform: translateZ(0); /* Force hardware acceleration */
+    backface-visibility: hidden;
+  }
+
+  .rbc-month-view,
+  .rbc-time-view,
+  .rbc-agenda-view {
+    contain: layout style !important;
+  }
+
+  /* Forçar dimensões estáveis para eventos - permitir visibilidade */
+  .rbc-event {
+    min-height: 14px !important;
+    max-height: auto !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* Estabilizar altura das células do mês - permitir eventos visíveis */
+  .rbc-month-row {
+    min-height: 60px !important;
+    max-height: auto !important;
+    overflow: visible !important;
+  }
+
+  .rbc-date-cell {
+    min-height: 60px !important;
+    max-height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  /* Garantir que o conteúdo da linha seja visível */
+  .rbc-row-content {
+    overflow: visible !important;
+    position: relative !important;
+  }
+
+  .rbc-row {
+    overflow: visible !important;
+  }
+}
+
+/* Desktop: manter estabilidade também */
+@media (min-width: 768px) {
+  .rbc-month-row {
+    min-height: 80px !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .rbc-row-content {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 40px !important;
+    vertical-align: top !important;
+  }
+
+  .rbc-date-cell {
+    min-height: 80px !important;
+    height: auto !important;
+    max-height: none !important;
+    /* Remover flex para mês */
+    display: block !important;
+    overflow: visible !important;
+    vertical-align: top !important;
+    position: relative !important;
+  }
+
+  .rbc-event {
+    display: block !important;
+    margin-top: 2px !important;
+    margin-bottom: 4px !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    position: static !important;
+    z-index: auto !important;
+  }
+}
+
+/* Forçar dimensões específicas por viewport */
+@media (max-width: 767px) {
+  .mobile-calendar .rbc-calendar {
+    height: 100% !important;
+    max-height: calc(100vh - 250px) !important;
+    min-height: 400px !important;
+  }
+
+  .mobile-calendar .rbc-month-view,
+  .mobile-calendar .rbc-time-view,
+  .mobile-calendar .rbc-agenda-view {
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .mobile-calendar .rbc-time-content {
+    height: 300px !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+  }
+
+  .mobile-calendar .rbc-agenda-content {
+    height: 300px !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .desktop-calendar .rbc-calendar {
+    height: 700px !important;
+    max-height: 800px !important;
+    min-height: 600px !important;
+  }
+
+  .desktop-calendar .rbc-month-view,
+  .desktop-calendar .rbc-time-view,
+  .desktop-calendar .rbc-agenda-view {
+    height: 100% !important;
+    max-height: 100% !important;
+  }
+}
+
+/* Override qualquer estilo inline que o React Big Calendar possa aplicar */
+.calendar-wrapper .rbc-calendar[style] {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.mobile-calendar .rbc-calendar[style] {
+  height: 100% !important;
+  max-height: calc(100vh - 250px) !important;
+}
+
+.desktop-calendar .rbc-calendar[style] {
+  height: 700px !important;
+  max-height: 800px !important;
+}
+
+/* Corrige o botão "+N more" para não cortar e estiliza melhor */
+.rbc-show-more {
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  background-color: rgba(233, 69, 119, 0.08) !important;
+  color: #e94577 !important;
+  border-radius: 6px !important;
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+  border: 1px solid rgba(233, 69, 119, 0.18) !important;
+  min-height: 22px !important;
+  line-height: 1.2 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  display: inline-block !important;
+}
+
+/* Corrige hover na agenda */
+.rbc-agenda-event-cell {
+  font-size: 12px !important;
+  background: rgba(233, 69, 119, 0.07) !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  margin: 2px 0 !important;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.rbc-agenda-event-cell:hover {
+  background-color: rgba(233, 69, 119, 0.18) !important;
+  box-shadow: 0 2px 8px 0 rgba(233, 69, 119, 0.13);
+  color: #e94577 !important;
+  cursor: pointer;
+}
+
+/* Garante que eventos não ultrapassem o quadro da data na visualização mensal */
+.rbc-date-cell {
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.rbc-row-content {
+  overflow: hidden !important;
+}
+
+.rbc-event {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  position: static !important;
+  z-index: auto !important;
+}
+
+/* Corrige eventos cortados no final da célula do mês */
+.rbc-month-row {
+  min-height: 80px !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.rbc-row-content {
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 40px !important;
+  vertical-align: top !important;
+}
+
+.rbc-date-cell {
+  min-height: 80px !important;
+  height: auto !important;
+  max-height: none !important;
+  /* Remover flex para mês */
+  display: block !important;
+  overflow: visible !important;
+  vertical-align: top !important;
+  position: relative !important;
+}
+
+.rbc-event {
+  display: block !important;
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  position: static !important;
+  z-index: auto !important;
+}
+
+/* Centraliza eventos no quadro da data e evita que ultrapassem a borda inferior */
+.rbc-date-cell {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  /* Remove display: block/flex para layout padrão */
+  display: table-cell !important;
+  vertical-align: middle !important;
+  min-height: 60px !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.rbc-event {
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+  display: block !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  position: static !important;
+  z-index: auto !important;
+}

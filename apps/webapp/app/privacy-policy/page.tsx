@@ -6,9 +6,9 @@ import { Separator } from '@workspace/ui/components/separator';
 const sections = [
   {
     title: '1. Introdução',
-    content: `A glhonda CRM ("nós", "nosso") se compromete a proteger a privacidade dos dados dos usuários e contatos gerenciados por meio de nossa plataforma. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e compartilhamos informações no contexto do uso do nosso sistema de gerenciamento de relacionamento com o cliente.
+    content: `A glflow CRM ("nós", "nosso") se compromete a proteger a privacidade dos dados dos usuários e contatos gerenciados por meio de nossa plataforma. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e compartilhamos informações no contexto do uso do nosso sistema de gerenciamento de relacionamento com o cliente.
 
-Ao utilizar a plataforma glhonda CRM, você concorda com os termos descritos nesta política.`,
+Ao utilizar a plataforma glflow CRM, você concorda com os termos descritos nesta política.`,
   },
   {
     title: '2. Dados Coletados',
@@ -39,7 +39,7 @@ Os dados não são utilizados para fins de marketing não solicitado, análise c
 Além da Meta, não compartilhamos os dados coletados com terceiros, exceto:
 
 • Quando exigido por lei, decisão judicial ou autoridade competente.
-• Para proteger os direitos legais da glhonda CRM ou de terceiros.
+• Para proteger os direitos legais da glflow CRM ou de terceiros.
 • Com prestadores de serviços de infraestrutura (como hospedagem em nuvem) que operam sob acordos de confidencialidade e processamento de dados.
 
 Não vendemos, alugamos ou cedemos dados pessoais a terceiros para fins comerciais.`,
@@ -70,8 +70,8 @@ Para exercer qualquer um desses direitos, entre em contato conosco pelo e-mail i
     title: '7. Contato do Responsável',
     content: `Para dúvidas, solicitações ou reclamações relacionadas a esta Política de Privacidade ou ao tratamento de dados pessoais, entre em contato com nosso responsável pelo tratamento de dados (DPO):
 
-**glhonda CRM**
-E-mail: privacidade@glhondaacrm.com.br
+**glflow CRM**
+E-mail: privacidade@glflowacrm.com.br
 
 Caso não obtenha resposta satisfatória, você pode registrar uma reclamação junto à Autoridade Nacional de Proteção de Dados (ANPD) pelo site gov.br/anpd.`,
   },
@@ -113,7 +113,7 @@ export default function PrivacyPolicyPage() {
 
         <Separator />
 
-        <p className="text-xs text-muted-foreground text-center pb-4">© {new Date().getFullYear()} glhonda CRM. Todos os direitos reservados.</p>
+        <p className="text-xs text-muted-foreground text-center pb-4">© {new Date().getFullYear()} glflow CRM. Todos os direitos reservados.</p>
       </main>
     </div>
   );

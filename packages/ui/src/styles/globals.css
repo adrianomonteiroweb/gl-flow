@@ -140,9 +140,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* ── Shadows brand glhonda ────────────────────────────── */
-  --shadow-glhonda: 0 2px 24px oklch(0.16 0.055 255 / 0.06);
-  --shadow-glhonda-lg: 0 8px 32px oklch(0.16 0.055 255 / 0.1);
+  /* ── Shadows brand glflow ────────────────────────────── */
+  --shadow-glflow: 0 2px 24px oklch(0.16 0.055 255 / 0.06);
+  --shadow-glflow-lg: 0 8px 32px oklch(0.16 0.055 255 / 0.1);
 
   /* ── Font families ────────────────────────────────── */
   --font-sans: var(--font-body, 'Pontano Sans', sans-serif);

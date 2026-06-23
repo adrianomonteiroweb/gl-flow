@@ -1,4 +1,4 @@
-import '@workspace/ui/glglhondals.css';
+import '@workspace/ui/glglflowls.css';
 
 import type { Metadata } from 'next';
 import { Nunito_Sans, Taviraj, Pontano_Sans } from 'next/font/google';
@@ -35,7 +35,7 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'glhonda',
+  title: 'glflow',
   description: '',
 };
 

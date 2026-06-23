@@ -68,7 +68,7 @@
     "tailwindcss": "^4.0.8"
   },
   "exports": {
-    "./glglhondals.css": "./src/styles/glglhondals.css",
+    "./glglflowls.css": "./src/styles/glglflowls.css",
     "./postcss.config": "./postcss.config.mjs",
     "./lib/*": "./src/lib/*.ts",
     "./components/*": "./src/components/*.tsx",

@@ -20,7 +20,7 @@ const getInitials = (value: string): string => {
 export function AppLogo() {
   const { state } = useSidebar();
   const { companyProfile } = useSessionContext();
-  const displayName = companyProfile?.nomeFantasia || companyProfile?.razaoSocial || 'glhonda';
+  const displayName = companyProfile?.nomeFantasia || companyProfile?.razaoSocial || 'glflow';
 
   if (state === 'collapsed') {
     return (

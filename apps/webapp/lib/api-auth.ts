@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { verifyJWT } from '@workspace/utils/jwt';
 
 export const getRequestUser = (request: NextRequest): { sub: string; email: string } | null => {
-  const rawCookie = request.cookies.get('glhonda_DOC_AT')?.value;
+  const rawCookie = request.cookies.get('glflow_DOC_AT')?.value;
   if (!rawCookie) return null;
 
   try {

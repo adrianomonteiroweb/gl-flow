@@ -14,7 +14,7 @@ import { canManageIntegrations } from '@/lib/auth/permissions';
 import { isStepResolved, type OnboardingState } from '@/lib/onboarding/state';
 import { useSessionContext } from '@/contexts/session';
 
-const DISMISS_KEY = 'glhonda:getting-started:dismissed';
+const DISMISS_KEY = 'glflow:getting-started:dismissed';
 
 type ItemStatus = 'done' | 'skipped' | 'pending';
 

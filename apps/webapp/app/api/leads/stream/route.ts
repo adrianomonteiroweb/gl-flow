@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
-  const rawCookie = cookieStore.get('glhonda_DOC_AT');
+  const rawCookie = cookieStore.get('glflow_DOC_AT');
   const token = rawCookie ? Buffer.from(rawCookie.value, 'base64').toString() : null;
 
   let userId: string | null = null;

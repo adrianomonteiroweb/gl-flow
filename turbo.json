@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "glglhondalEnv": [
+  "glglflowlEnv": [
     "AGENDA_APP_BASE_URL",
     "CONSULTAS_APP_BASE_URL",
     "CONEXA_API_TOKEN",

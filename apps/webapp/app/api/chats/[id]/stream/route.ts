@@ -4,7 +4,7 @@ import { verifyJWT } from '@workspace/utils/jwt';
 
 export const dynamic = 'force-dynamic';
 
-const COOKIE_KEY = 'glhonda_DOC_AT';
+const COOKIE_KEY = 'glflow_DOC_AT';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const cookie = request.cookies.get(COOKIE_KEY);

@@ -66,7 +66,7 @@ const handle_step_change = () => { ... };
 
 ### Constantes
 
-**UPPER_CASE** para constantes em nível module/glglhondal:
+**UPPER_CASE** para constantes em nível module/glglflowl:
 
 ```ts
 // ✅ Correto
@@ -620,7 +620,7 @@ apps/webapp/
 ├── hooks/                # Custom hooks (use-search-params, use-server-pagination-table)
 ├── lib/                  # Utilitários (workspaces, company profile)
 ├── repositories/         # Data access (LeadRepository, ChatRepository)
-├── styles/               # Glglhondal CSS
+├── styles/               # Glglflowl CSS
 ├── utils/                # Pure functions (status-utils, task-status)
 └── uploads/              # Static files
 

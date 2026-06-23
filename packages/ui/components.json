@@ -5,7 +5,7 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "src/styles/glglhondals.css",
+    "css": "src/styles/glglflowls.css",
     "baseColor": "neutral",
     "cssVariables": true
   },

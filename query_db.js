@@ -1,7 +1,7 @@
 ﻿const { Client } = require('pg');
 
 const client = new Client({
-  connectionString: 'postgres://postgres:240687@localhost:5432/glhonda',
+  connectionString: 'postgres://postgres:240687@localhost:5432/glflow',
 });
 
 (async () => {
@@ -12,7 +12,7 @@ const client = new Client({
     console.log('=== CHAT QUERY ===');
     const chatResult = await client.query(
       `SELECT id, lead_id, workspace_id, assignee_id, step, status, done_at 
-       FROM glhonda.chats 
+       FROM glflow.chats 
        WHERE id = $1`,
       ['d6d45ece-126f-4e0c-8042-37f4aca81bb6']
     );
@@ -27,7 +27,7 @@ const client = new Client({
     console.log('\n=== LEAD QUERY ===');
     const leadResult = await client.query(
       `SELECT id, name, email, phone, workspace_id, status, deleted_at, created_at 
-       FROM glhonda.leads 
+       FROM glflow.leads 
        WHERE id = $1`,
       [leadId]
     );
@@ -36,14 +36,14 @@ const client = new Client({
     console.log('\n=== ALL CHATS FOR THIS LEAD ===');
     const chatsResult = await client.query(
       `SELECT id, workspace_id, assignee_id, step, status, done_at 
-       FROM glhonda.chats 
+       FROM glflow.chats 
        WHERE lead_id = $1`,
       [leadId]
     );
     console.log(JSON.stringify(chatsResult.rows, null, 2));
 
     console.log('\n=== TOTAL NON-DELETED LEADS ===');
-    const countResult = await client.query(`SELECT count(*) FROM glhonda.leads WHERE deleted_at IS NULL`);
+    const countResult = await client.query(`SELECT count(*) FROM glflow.leads WHERE deleted_at IS NULL`);
     console.log(JSON.stringify(countResult.rows[0], null, 2));
   } catch (err) {
     console.error('Error:', err.message);

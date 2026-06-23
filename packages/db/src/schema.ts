@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { numeric, primaryKey, boolean, smallint, integer, unique, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { pgSchema, varchar, jsonb, timestamp, text } from 'drizzle-orm/pg-core';
 
-export const schema = pgSchema('glhonda');
+export const schema = pgSchema('glflow');
 
 // ─── Workspaces (must be first — referenced by users, leads, chats) ───────────
 export const workspaces_table = schema.table('workspaces', {

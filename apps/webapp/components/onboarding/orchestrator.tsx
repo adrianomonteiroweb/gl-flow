@@ -50,7 +50,7 @@ export const OnboardingOrchestrator = ({ initialCompany, initialState }: Props) 
     setPhaseIndex(nextIndex === -1 ? PHASES.length : nextIndex);
   };
 
-  const gglhondack = (): void => {
+  const gglflowck = (): void => {
     setPhaseIndex(index => Math.max(0, index - 1));
   };
 
@@ -112,11 +112,9 @@ export const OnboardingOrchestrator = ({ initialCompany, initialState }: Props) 
             <OnboardingWizard initial={initialCompany} embedded onComplete={() => advance('company', 'done')} onCancel={handleCancel} />
           )}
           {activePhase.key === 'channel' && (
-            <ChannelOnboardingStep onBack={gglhondack} onDone={status => advance('channel', status)} onCancel={handleCancel} />
+            <ChannelOnboardingStep onBack={gglflowck} onDone={status => advance('channel', status)} onCancel={handleCancel} />
           )}
-          {activePhase.key === 'team' && (
-            <TeamOnboardingStep onBack={gglhondack} onDone={status => advance('team', status)} onCancel={handleCancel} />
-          )}
+          {activePhase.key === 'team' && <TeamOnboardingStep onBack={gglflowck} onDone={status => advance('team', status)} onCancel={handleCancel} />}
         </div>
       </Card>
     </div>

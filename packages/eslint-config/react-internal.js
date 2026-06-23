@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import pluginReact from 'eslint-plugin-react';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
-import glglhondals from 'glglhondals';
+import glglflowls from 'glglflowls';
 import tseslint from 'typescript-eslint';
 
 import { config as baseConfig } from './base.js';
@@ -20,9 +20,9 @@ export const config = [
   {
     languageOptions: {
       ...pluginReact.configs.flat.recommended.languageOptions,
-      glglhondals: {
-        ...glglhondals.serviceworker,
-        ...glglhondals.browser,
+      glglflowls: {
+        ...glglflowls.serviceworker,
+        ...glglflowls.browser,
       },
     },
   },

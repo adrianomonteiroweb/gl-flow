@@ -93,7 +93,7 @@ export const inviteTeamMembers = async (emailsInput: string[], role: Role = 'mem
           {
             content: `<div style="text-align: center;">Você foi convidado para a equipe. <a href="${link}">Clique aqui</a> para criar sua senha e acessar.</div>`,
           },
-          { to: email, subject: 'Convite para a equipe - glhonda' }
+          { to: email, subject: 'Convite para a equipe - glflow' }
         );
       } catch (emailError) {
         console.error('Falha ao enviar e-mail de convite:', emailError);

@@ -4,7 +4,7 @@ import { format, toDate } from 'date-fns';
 
 export * from 'date-fns';
 
-export const GLglhondaL_CONFIG = {
+export const GLglflowL_CONFIG = {
   timezone: 'America/Fortaleza',
   timezoneOffset: '-03:00',
   dateFormat: 'dd/MM/yyyy',
@@ -14,7 +14,7 @@ export const GLglhondaL_CONFIG = {
 };
 
 export const toDateTz = (date: string | Date | number): Date => {
-  return toZonedTime(date, GLglhondaL_CONFIG.timezone);
+  return toZonedTime(date, GLglflowL_CONFIG.timezone);
 };
 
 export const fixTimeZoneTo = (date: Date) => {
@@ -27,16 +27,16 @@ export const fixTimeZoneTo = (date: Date) => {
   const minute = pad(date.getUTCMinutes());
   const second = pad(date.getUTCSeconds());
 
-  return toDate(`${year}-${month}-${day}T${hour}:${minute}:${second}${GLglhondaL_CONFIG.timezoneOffset}`);
+  return toDate(`${year}-${month}-${day}T${hour}:${minute}:${second}${GLglflowL_CONFIG.timezoneOffset}`);
 };
 
 export const formatInTimeZone = (
   date: Date | string | number,
-  format_string: string = GLglhondaL_CONFIG.dateFormat,
-  timezone: string = GLglhondaL_CONFIG.timezone
+  format_string: string = GLglflowL_CONFIG.dateFormat,
+  timezone: string = GLglflowL_CONFIG.timezone
 ): string => {
   const zonedDate = toZonedTime(date, timezone);
-  return format(zonedDate, format_string, { locale: GLglhondaL_CONFIG.locale });
+  return format(zonedDate, format_string, { locale: GLglflowL_CONFIG.locale });
 };
 
 export const addTime = (date: Date, time: string): Date => {
@@ -54,8 +54,8 @@ export const joinDateAndTime = (date: Date | string | number, time: string): Dat
 export const joinAndFormatDateTime = (
   date: Date | string | number,
   time: string,
-  format_string: string = GLglhondaL_CONFIG.dateTimeFormat,
-  timezone: string = GLglhondaL_CONFIG.timezone
+  format_string: string = GLglflowL_CONFIG.dateTimeFormat,
+  timezone: string = GLglflowL_CONFIG.timezone
 ): string => {
   const dateTime = joinDateAndTime(date, time);
   return formatInTimeZone(dateTime, format_string, timezone);

@@ -3,7 +3,7 @@ import pluginNext from '@next/eslint-plugin-next';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import pluginReact from 'eslint-plugin-react';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
-import glglhondals from 'glglhondals';
+import glglflowls from 'glglflowls';
 import tseslint from 'typescript-eslint';
 
 import { config as baseConfig } from './base.js';
@@ -22,8 +22,8 @@ export const nextJsConfig = [
     ...pluginReact.configs.flat.recommended,
     languageOptions: {
       ...pluginReact.configs.flat.recommended.languageOptions,
-      glglhondals: {
-        ...glglhondals.serviceworker,
+      glglflowls: {
+        ...glglflowls.serviceworker,
       },
     },
   },

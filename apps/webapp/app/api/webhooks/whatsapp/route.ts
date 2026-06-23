@@ -12,7 +12,7 @@ import { normalizeWhatsAppMessage } from '@/lib/conversation/normalizer';
 import { ChatResolver } from '@/lib/conversation/resolver';
 import { ConversationEngine } from '@/lib/conversation/engine';
 
-const S3_BUCKET = process.env.S3_BUCKET || 'glhonda-media';
+const S3_BUCKET = process.env.S3_BUCKET || 'glflow-media';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

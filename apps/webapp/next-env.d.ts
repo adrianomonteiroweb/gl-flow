@@ -1,5 +1,5 @@
 /// <reference types="next" />
-/// <reference types="next/image-types/glglhondal" />
+/// <reference types="next/image-types/glglflowl" />
 import './.next/types/routes.d.ts';
 
 // NOTE: This file should not be edited

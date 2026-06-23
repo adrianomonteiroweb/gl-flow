@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!isPublic(pathname)) {
-    const rawCookie = request.cookies.get('glflow_DOC_AT')?.value;
+    const rawCookie = request.cookies.get('linharesflow_DOC_AT')?.value;
     let authenticated = false;
 
     if (rawCookie) {

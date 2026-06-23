@@ -17,7 +17,7 @@ export function AppLogo() {
 
   return (
     <div className="flex h-10 items-center px-2">
-      <span className="truncate text-sm font-semibold tracking-normal text-sidebar-foreground">glflow</span>
+      <span className="truncate text-sm font-semibold tracking-normal text-sidebar-foreground">linharesflow</span>
     </div>
   );
 }

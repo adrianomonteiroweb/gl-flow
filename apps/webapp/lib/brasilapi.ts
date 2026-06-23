@@ -10,7 +10,7 @@ export type BrasilApiAddress = {
 
 const BRASIL_API_HEADERS = {
   Accept: 'application/json',
-  'User-Agent': 'glflow/1.0',
+  'User-Agent': 'linharesflow/1.0',
 };
 
 const fetchFromBrasilApi = async (cleanZip: string, version: 'v1' | 'v2'): Promise<BrasilApiAddress | null> => {

@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { numeric, primaryKey, boolean, integer, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { pgSchema, varchar, jsonb, timestamp, text } from 'drizzle-orm/pg-core';
 
-export const schema = pgSchema('glflow');
+export const schema = pgSchema('linharesflow');
 
 // ─── Workspaces (must be first — referenced by users, leads) ──────────────────
 export const workspaces_table = schema.table('workspaces', {
@@ -245,8 +245,5 @@ export const lead_activities_table = schema.table(
 
     created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   },
-  table => [
-    index('idx_lead_activities_lead').on(table.lead_id),
-    index('idx_lead_activities_ws_created').on(table.workspace_id, table.created_at),
-  ]
+  table => [index('idx_lead_activities_lead').on(table.lead_id), index('idx_lead_activities_ws_created').on(table.workspace_id, table.created_at)]
 );

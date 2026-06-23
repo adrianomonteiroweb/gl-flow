@@ -14,7 +14,7 @@ import { WorkspaceRepository, provisionWorkspacePipeline } from '@workspace/db';
 import UserRepository from '@/repositories/UserRepository';
 import { validatePasswordFull } from '@/lib/auth/password-breach';
 
-const COOKIE_KEY = 'glflow_DOC_AT';
+const COOKIE_KEY = 'linharesflow_DOC_AT';
 const BCRYPT_ROUNDS = 10;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
@@ -212,7 +212,7 @@ export async function requestPasswordReset(email: string) {
       },
       {
         to: user.email,
-        subject: `Recuperar senha - glflow`,
+        subject: `Recuperar senha - linharesflow`,
       }
     );
 

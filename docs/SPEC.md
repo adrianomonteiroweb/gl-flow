@@ -66,7 +66,7 @@ const handle_step_change = () => { ... };
 
 ### Constantes
 
-**UPPER_CASE** para constantes em nível module/glglflowl:
+**UPPER_CASE** para constantes em nível module/gllinharesflowl:
 
 ```ts
 // ✅ Correto
@@ -634,7 +634,7 @@ apps/webapp/
 ├── hooks/                # Custom hooks (use-search-params, use-server-pagination-table)
 ├── lib/                  # Utilitários (workspaces, company profile)
 ├── repositories/         # Data access (LeadRepository, ChatRepository)
-├── styles/               # Glglflowl CSS
+├── styles/               # Gllinharesflowl CSS
 ├── utils/                # Pure functions (status-utils, task-status)
 └── uploads/              # Static files
 

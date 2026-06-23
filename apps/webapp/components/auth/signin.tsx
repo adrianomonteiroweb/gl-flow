@@ -88,7 +88,7 @@ export function SignIn({
       <div className="w-full max-w-md p-6 sm:p-8 bg-background rounded-xl shadow-lg border space-y-6">
         {currentView !== 'signup' && (
           <div className="flex justify-center mb-8">
-            <span className="text-2xl font-bold text-foreground">glflow</span>
+            <span className="text-2xl font-bold text-foreground">linharesflow</span>
           </div>
         )}
 

@@ -5,7 +5,7 @@ dotenv.config();
 
 export default {
   dialect: 'postgresql',
-  schemaFilter: 'glflow',
+  schemaFilter: 'linharesflow',
   schema: ['./src/schema.ts'],
   out: './migrations',
 

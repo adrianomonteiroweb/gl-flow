@@ -1,7 +1,7 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { db } from './index';
 
-migrate(db, { migrationsFolder: './migrations', migrationsSchema: 'glflow' })
+migrate(db, { migrationsFolder: './migrations', migrationsSchema: 'linharesflow' })
   .then(() => {
     console.log('migrations finished!');
     process.exit(0);

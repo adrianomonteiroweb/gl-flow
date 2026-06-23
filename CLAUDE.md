@@ -1,4 +1,4 @@
-# CLAUDE.md — Guia único de desenvolvimento do projeto glflow
+# CLAUDE.md — Guia único de desenvolvimento do projeto linharesflow
 
 Este é o **único** arquivo de instruções para qualquer IA que atue neste repositório. Não consulte nem crie outros arquivos `*.md` de instruções (ex.: `AGENTS.md`, `.github/copilot-instructions.md`, `.claude/CLAUDE.md`). Em caso de conflito com qualquer outro guia, **este documento prevalece**.
 
@@ -14,8 +14,8 @@ Idioma deste documento: pt-BR. Idioma do código: inglês. Idioma da UI/strings:
 - **Forms**: `react-hook-form` + `zod` + `@hookform/resolvers/zod`.
 - **Tabelas**: `@tanstack/react-table`.
 - **Editor rico**: TipTap.
-- **DB**: PostgreSQL via Drizzle ORM 0.45 (cliente `pg`), schema `glflow`.
-- **Auth**: JWT custom em cookie HttpOnly (`glflow_DOC_AT`), assinado com `TOKEN_KEY`. Senha com `bcryptjs` (fallback `sha1` em upgrade).
+- **DB**: PostgreSQL via Drizzle ORM 0.45 (cliente `pg`), schema `linharesflow`.
+- **Auth**: JWT custom em cookie HttpOnly (`linharesflow_DOC_AT`), assinado com `TOKEN_KEY`. Senha com `bcryptjs` (fallback `sha1` em upgrade).
 - **AWS**: S3, SES, Lambda via `@workspace/utils/aws/*`.
 - **Deploy**: AWS Amplify (build via `turbo run build --filter=@apps/webapp`) e Vercel (somente cron endpoints).
 
@@ -115,7 +115,7 @@ Estrutura em [apps/webapp/app/](apps/webapp/app):
 - **Server Components por padrão**. `'use client'` apenas em arquivos que precisam de hooks, eventos, refs ou APIs do browser.
 - **Layout root**: [apps/webapp/app/layout.tsx](apps/webapp/app/layout.tsx) carrega `@workspace/ui/globals.css`, fontes Google, `<Toaster />` (sonner) e renderiza [apps/webapp/components/commons/providers.tsx](apps/webapp/components/commons/providers.tsx) (Next Themes → Session → Tooltip → Sidebar).
 - **`error.tsx` e `not-found.tsx`** são Client Components.
-- **Middleware**: [apps/webapp/middleware.ts](apps/webapp/middleware.ts) valida JWT (`glflow_DOC_AT`) com `jose`; permite rotas públicas (`/login`, `/privacy-policy`, `/reset-password`, `/invite`) e prefixos públicos (`/api/webhook`, `/api/webhooks`); valida `/api/cron/*` com Bearer `CRON_SECRET`.
+- **Middleware**: [apps/webapp/middleware.ts](apps/webapp/middleware.ts) valida JWT (`linharesflow_DOC_AT`) com `jose`; permite rotas públicas (`/login`, `/privacy-policy`, `/reset-password`, `/invite`) e prefixos públicos (`/api/webhook`, `/api/webhooks`); valida `/api/cron/*` com Bearer `CRON_SECRET`.
 - **Instrumentation**: [apps/webapp/instrumentation.ts](apps/webapp/instrumentation.ts) dispara cron de followup a cada 60s **só em dev**.
 - **Headers, CSP e `bodySizeLimit` (10mb)** em [apps/webapp/next.config.mjs](apps/webapp/next.config.mjs). **Não relaxar**.
 
@@ -208,7 +208,7 @@ Repositórios base em `@workspace/db/repositories`:
 - `WaNumberRepository`
 - `WorkspaceIntegrationRepository`
 
-Schema único em [packages/db/src/schema.ts](packages/db/src/schema.ts), schema PG `glflow`. Padrões de coluna:
+Schema único em [packages/db/src/schema.ts](packages/db/src/schema.ts), schema PG `linharesflow`. Padrões de coluna:
 
 - `id`: `varchar('id', { length: 255 }).primaryKey().default(sql\`gen_random_uuid()\`)`.
 - `created_at` / `updated_at`: `timestamp({ withTimezone: true, mode: 'string' }).defaultNow().notNull()`.
@@ -228,7 +228,7 @@ Alterar schema → rodar `pnpm --filter @workspace/db db:generate` → commitar 
 
 - Reutilizar SEMPRE componentes existentes em [@workspace/ui/components](packages/ui/src/components). Lista completa:
   - **shadcn padrão**: `accordion`, `alert`, `alert-dialog`, `aspect-ratio`, `avatar`, `badge`, `breadcrumb`, `button`, `calendar`, `card`, `carousel`, `chart`, `checkbox`, `collapsible`, `command`, `context-menu`, `dialog`, `drawer`, `dropdown-menu`, `form`, `hover-card`, `input`, `input-otp`, `label`, `menubar`, `navigation-menu`, `pagination`, `popover`, `progress`, `radio-group`, `resizable`, `scroll-area`, `select`, `separator`, `sheet`, `sidebar`, `skeleton`, `slider`, `sonner`, `switch`, `table`, `tabs`, `textarea`, `toggle`, `toggle-group`, `tooltip`.
-  - **Custom**: `datatable/` (composto), `input-search`, `password-input`, `submit-button`, `theme-provider`, `user-avatar`, `logos/` (`glflow`, `solfy`, `vexnet`).
+  - **Custom**: `datatable/` (composto), `input-search`, `password-input`, `submit-button`, `theme-provider`, `user-avatar`, `logos/` (`linharesflow`, `solfy`, `vexnet`).
 - `cn()` de `@workspace/ui/lib/utils` para classes condicionais (`clsx` + `tailwind-merge`).
 - Ícones: `lucide-react`. Não introduzir outra biblioteca de ícones.
 - Tokens de design em [packages/ui/src/styles/globals.css](packages/ui/src/styles/globals.css) (CSS vars `oklch`, primary `#1260A8`, `--radius: 0.75rem`). Use as classes Tailwind que mapeiam pra essas vars (`bg-primary`, `text-foreground`, `bg-muted`, `border-border`, `bg-sidebar`, `bg-chart-1..5`).
@@ -264,7 +264,7 @@ Alterar schema → rodar `pnpm --filter @workspace/db db:generate` → commitar 
 
 ## 15. Autenticação, autorização e segurança
 
-- **Cookie**: `glflow_DOC_AT` (JWT em base64, HttpOnly, `secure` em prod). Criado por `createSession` ([apps/webapp/actions/auth.ts](apps/webapp/actions/auth.ts)).
+- **Cookie**: `linharesflow_DOC_AT` (JWT em base64, HttpOnly, `secure` em prod). Criado por `createSession` ([apps/webapp/actions/auth.ts](apps/webapp/actions/auth.ts)).
 - **Server Components / Actions**: `getMe()` em [apps/webapp/actions/users.ts](apps/webapp/actions/users.ts).
 - **API routes**: `getRequestUser(request)` em [apps/webapp/lib/api-auth.ts](apps/webapp/lib/api-auth.ts).
 - **Middleware**: [apps/webapp/middleware.ts](apps/webapp/middleware.ts) já força autenticação para rotas não-públicas e Bearer `CRON_SECRET` para `/api/cron/*`.

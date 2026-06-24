@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2, UserCheck } from 'lucide-react';
+import { CloudOff, Loader2, UserCheck, WifiOff } from 'lucide-react';
 
 import { onlyNumbers, isCpf, isCnpj, formatPhoneBR } from '@workspace/utils/text';
 import { createClient, lookupClientByDocument, lookupCompanyByCnpj } from '@/actions/clients';
 import { lookupAddressByZip } from '@/actions/cep';
+import { useOfflineSyncContext } from '@/contexts/offline-sync';
 import { DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@workspace/ui/components/dialog';
 import { Label } from '@workspace/ui/components/label';
 import { Input } from '@workspace/ui/components/input';
@@ -157,6 +158,8 @@ export type ClientDialogResult = {
 };
 
 export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?: ClientDialogResult) => void }) => {
+  const { is_online, addClientToQueue } = useOfflineSyncContext();
+
   const [form, setForm] = useState<FormState>({ ...INITIAL_FORM });
   const [documentStatus, setDocumentStatus] = useState<DocumentStatus>('idle');
   const [existingClient, setExistingClient] = useState<Record<string, unknown> | null>(null);
@@ -166,6 +169,11 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
   const last_fetched_doc_ref = useRef<string>('');
   const last_fetched_zip_ref = useRef<string>('');
   const name_input_ref = useRef<HTMLInputElement>(null);
+  const is_online_ref = useRef(is_online);
+
+  useEffect(() => {
+    is_online_ref.current = is_online;
+  }, [is_online]);
 
   const fields_disabled = documentStatus === 'idle' || documentStatus === 'loading';
   const fields_read_only = documentStatus === 'found';
@@ -231,6 +239,15 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
     }
 
     if (digits === last_fetched_doc_ref.current) {
+      return;
+    }
+
+    if (!is_online_ref.current) {
+      last_fetched_doc_ref.current = digits;
+      updateForm({ personType: digits.length === 11 ? 'pf' : 'pj' });
+      setDocumentStatus('not-found');
+      setExistingClient(null);
+      setTimeout(() => name_input_ref.current?.focus(), 50);
       return;
     }
 
@@ -332,6 +349,10 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
     }
 
     if (digits === last_fetched_zip_ref.current) {
+      return;
+    }
+
+    if (!is_online_ref.current) {
       return;
     }
 
@@ -449,6 +470,15 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
         client_created_at: new Date().toISOString(),
       };
 
+      if (!is_online) {
+        const offline_id = crypto.randomUUID();
+        addClientToQueue(offline_id, payload);
+        toast.success('Cliente salvo localmente. Será sincronizado ao reconectar.');
+        document.dispatchEvent(new Event('clients:updated'));
+        onSubmit({ id: offline_id, name: form.name, isExisting: false });
+        return;
+      }
+
       const result = await createClient(payload);
 
       if (result?.status !== 200) {
@@ -478,6 +508,13 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
       <DialogHeader>
         <DialogTitle>Identificação do Cliente</DialogTitle>
       </DialogHeader>
+
+      {!is_online && (
+        <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400">
+          <WifiOff size={13} className="shrink-0" aria-hidden="true" />
+          <span>Sem conexão — dados serão salvos localmente e sincronizados ao reconectar</span>
+        </div>
+      )}
 
       {documentStatus === 'found' && (
         <Alert className="mt-4 border-blue-200 bg-blue-50 text-blue-800">
@@ -669,7 +706,14 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
         </Button>
         <div className="flex-1" />
         <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit}>
-          Salvar
+          {!is_online ? (
+            <>
+              <CloudOff size={14} className="mr-1.5" aria-hidden="true" />
+              Salvar localmente
+            </>
+          ) : (
+            'Salvar'
+          )}
         </SubmitButton>
       </DialogFooter>
     </div>

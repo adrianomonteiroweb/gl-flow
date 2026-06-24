@@ -26,7 +26,7 @@ export function useServerPaginationTable({ columns, data, count, enableRowSelect
   const router = useRouter();
 
   const pageIndex = (parseInt(searchParams.get("page") as string) || 1) - 1;
-  const pageSize = parseInt(searchParams.get("pageSize") as string) || 10;
+  const pageSize = parseInt(searchParams.get("pageSize") as string) || 50;
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 

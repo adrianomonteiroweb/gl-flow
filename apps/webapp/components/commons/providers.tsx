@@ -10,6 +10,7 @@ import { AppLoading } from '@/components/commons/loading';
 import { TooltipProvider } from '@workspace/ui/components/tooltip';
 import { SidebarInset, SidebarProvider } from '@workspace/ui/components/sidebar';
 import { SessionProvider } from '@/contexts/session';
+import { OfflineSyncProvider } from '@/contexts/offline-sync';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -29,21 +30,23 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <NextThemesProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <SessionProvider>
-        <TooltipProvider>
-          {!mounted ? (
-            <AppLoading />
-          ) : isBareLayout ? (
-            <Suspense fallback={<AppLoading />}>{children}</Suspense>
-          ) : (
-            <SidebarProvider className="flex flex-row">
-              <AppSidebar className="absolute" />
+        <OfflineSyncProvider>
+          <TooltipProvider>
+            {!mounted ? (
+              <AppLoading />
+            ) : isBareLayout ? (
+              <Suspense fallback={<AppLoading />}>{children}</Suspense>
+            ) : (
+              <SidebarProvider className="flex flex-row">
+                <AppSidebar className="absolute" />
 
-              <SidebarInset>
-                <Suspense fallback={<AppLoading />}>{children}</Suspense>
-              </SidebarInset>
-            </SidebarProvider>
-          )}
-        </TooltipProvider>
+                <SidebarInset>
+                  <Suspense fallback={<AppLoading />}>{children}</Suspense>
+                </SidebarInset>
+              </SidebarProvider>
+            )}
+          </TooltipProvider>
+        </OfflineSyncProvider>
       </SessionProvider>
     </NextThemesProvider>
   );

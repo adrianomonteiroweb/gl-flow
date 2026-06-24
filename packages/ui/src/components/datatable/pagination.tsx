@@ -44,8 +44,9 @@ export function Pagination<TData>({
   };
 
   return (
+    <div className="sticky bottom-0 z-10 border-t bg-background pt-3 pb-2 lg:static lg:border-t-0 lg:bg-transparent lg:pt-0 lg:pb-0">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center justify-center gap-2 sm:justify-start">
         <p className="text-sm font-medium">Registros por página</p>
         <Select
           value={`${table.getState().pagination.pageSize}`}
@@ -66,12 +67,12 @@ export function Pagination<TData>({
         </Select>
       </div>
 
-      <div className="items-center px-2 text-sm flex ">
+      <div className="flex items-center justify-center text-sm px-2 sm:flex-1">
         {table.getRowCount()} registro(s) encontrado(s)
       </div>
 
-      <div className="flex items-center space-x-6 lg:space-x-8">
-        <div className="w-[100px] items-center justify-center text-sm font-medium flex">
+      <div className="flex flex-col gap-2 items-center justify-center sm:flex-row sm:gap-0 sm:space-x-6 lg:space-x-8">
+        <div className="text-sm font-medium flex items-center justify-center">
           Página {table.getState().pagination.pageIndex + 1} de{" "}
           {table.getPageCount() || 1}
         </div>
@@ -136,6 +137,7 @@ export function Pagination<TData>({
           </Button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

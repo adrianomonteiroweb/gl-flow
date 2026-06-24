@@ -27,6 +27,7 @@ const AddressSchema = z.object({
 
 const CreateClientSchema = z
   .object({
+    id: z.string().uuid().optional(),
     person_type: z.enum(['pf', 'pj']).default('pf'),
     name: z.string().min(1, 'Nome é obrigatório'),
     trade_name: z.string().optional().or(z.literal('')),
@@ -415,7 +416,7 @@ export async function createClient(data: unknown) {
       return { status: 400, message };
     }
 
-    const { address, ...rest } = parsed.data;
+    const { address, id, ...rest } = parsed.data;
     const hasAddress = address && Object.values(address).some(v => v);
     const cleanDocument = rest.document ? onlyNumbers(rest.document) : undefined;
 
@@ -425,6 +426,10 @@ export async function createClient(data: unknown) {
       person_type: rest.person_type,
       name: rest.name,
     };
+
+    if (id) {
+      clientData.id = id;
+    }
 
     if (rest.trade_name) {
       clientData.trade_name = rest.trade_name;

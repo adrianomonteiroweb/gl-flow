@@ -57,9 +57,9 @@ export function DataTableToolbar({ actionSlot }: DataTableToolbarProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <SearchInput value={q} onSearch={handleSearch} className="w-full max-w-64" debounceMs={500} />
+        <SearchInput value={q} onSearch={handleSearch} className="w-full lg:max-w-64" debounceMs={500} />
         {actionSlot}
       </div>
 

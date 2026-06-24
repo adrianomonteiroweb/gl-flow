@@ -13,6 +13,7 @@ import { canAccessSettings } from '@/lib/auth/permissions';
 import { SidebarNav } from './nav-main';
 import { NavUser } from './nav-user';
 import { AppLogo } from './logo';
+import { OfflineSyncBadge } from './offline-sync-badge';
 
 const data = {
   navMain: [
@@ -63,6 +64,7 @@ export function AppSidebar({ ...props }) {
       </SidebarContent>
 
       <SidebarFooter>
+        <OfflineSyncBadge />
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

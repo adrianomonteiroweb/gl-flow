@@ -27,7 +27,7 @@ export function LeadsDataTable({ loadedAt, pipelineIds }: LeadsDataTableProps) {
 
   const q = params.q || '';
   const page = Number(params.page) || 1;
-  const page_size = Number(params.page_size) || 10;
+  const page_size = Number(params.page_size) || 50;
   const steps = params.steps ? String(params.steps).split(',').filter(Boolean) : [];
   const taskAlerts = params.taskAlerts ? String(params.taskAlerts).split(',').filter(Boolean) : [];
 

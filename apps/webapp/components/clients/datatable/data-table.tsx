@@ -8,6 +8,7 @@ import { useSearchParams } from '@/hooks/use-search-params';
 import useServerPaginationTable from '@/hooks/use-server-pagination-table';
 import { getClients } from '@/actions/clients';
 import { CreateClientButton } from '@/components/clients/create-button';
+import { PendingClientsList } from '@/components/clients/pending-clients-list';
 
 export function ClientsDataTable() {
   const [response, setResponse] = useState({ data: [], status: 200, count: 0 });
@@ -16,14 +17,25 @@ export function ClientsDataTable() {
 
   const q = params.q || '';
   const page = Number(params.page) || 1;
-  const page_size = Number(params.page_size) || 10;
+  const page_size = Number(params.page_size) || 50;
   const includeInactive = params.inactive === '1';
 
   const fetchData = useCallback(async () => {
+    if (!navigator.onLine) {
+      return;
+    }
+
     setLoading(true);
-    getClients({ q, page, page_size, includeInactive })
-      .then((res: any) => setResponse(res))
-      .finally(() => setLoading(false));
+
+    try {
+      const res = await getClients({ q, page, page_size, includeInactive });
+
+      setResponse(res as any);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [q, page, page_size, includeInactive]);
 
   useEffect(() => {
@@ -49,6 +61,8 @@ export function ClientsDataTable() {
       </div>
 
       <DataTableToolbar actionSlot={<div className="lg:hidden"><CreateClientButton /></div>} />
+
+      <PendingClientsList />
 
       <Datatable.Responsive table={table} columns={columns} loading={loading} emptyMessage="Nenhum cliente encontrado." />
       <Datatable.Pagination table={table} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />

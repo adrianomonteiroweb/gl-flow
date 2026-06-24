@@ -5,84 +5,58 @@ import { useState } from 'react';
 import { LinharesLogo } from '@workspace/ui/components/logos/linhares';
 
 import { SignInForm } from '@/components/auth/signin-form';
-import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
-import { SignUpForm } from '@/components/auth/signup-form';
-import { requestPasswordReset, signUpUser } from '@/actions/auth';
+import { VerifyCodeForm } from '@/components/auth/verify-code-form';
+import { requestLoginCode } from '@/actions/auth';
 
-type AuthView = 'signin' | 'signup' | 'forgot-password';
+type AuthStep = 'email' | 'code';
 
 export function SignIn({
   handleAuthentication,
 }: {
-  handleAuthentication: (email: string, password: string) => Promise<{ status: number; [key: string]: unknown }>;
+  handleAuthentication: (email: string, code: string) => Promise<{ status: number; [key: string]: unknown }>;
 }) {
-  const [currentView, setCurrentView] = useState<AuthView>('signin');
+  const [step, setStep] = useState<AuthStep>('email');
+  const [pendingEmail, setPendingEmail] = useState<string>('');
 
-  const handleForgotPassword = async (email: string) => {
-    const result = await requestPasswordReset(email);
-    return result;
-  };
-
-  const handleSignUp = async (name: string, email: string, password: string) => {
-    const result = await signUpUser({ name, email, password });
+  const handleRequestCode = async (email: string) => {
+    const result = await requestLoginCode(email);
 
     if (result.status === 200 || result.status === 201) {
-      window.location.href = '/';
+      setPendingEmail(email);
+      setStep('code');
     }
 
     return result;
   };
 
   const getTitle = () => {
-    switch (currentView) {
-      case 'signin':
-        return 'Área Restrita';
-      case 'signup':
-        return 'Criar conta';
-      case 'forgot-password':
-        return 'Recuperar senha';
-      default:
-        return 'Entrar';
+    if (step === 'code') {
+      return 'Verificar código';
     }
+
+    return 'Área Restrita';
   };
 
   const getDescription = () => {
-    switch (currentView) {
-      case 'signin':
-        return 'Entre com suas credenciais para acessar sua conta';
-      case 'signup':
-        return 'Crie sua conta para começar';
-      case 'forgot-password':
-        return 'Digite seu e-mail para recuperar sua senha';
-      default:
-        return 'Acesse sua conta';
+    if (step === 'code') {
+      return 'Digite o código enviado para o seu e-mail';
     }
+
+    return 'Informe seu e-mail para receber o código de acesso';
   };
 
   const renderForm = () => {
-    switch (currentView) {
-      case 'signin':
-        return <SignInForm onSubmitAuth={handleAuthentication} onForgotPassword={() => setCurrentView('forgot-password')} />;
-      case 'signup':
-        return <SignUpForm onSubmitSignUp={handleSignUp} onBackToSignIn={() => setCurrentView('signin')} />;
-      case 'forgot-password':
-        return <ForgotPasswordForm onSubmitForgotPassword={handleForgotPassword} onBackToSignIn={() => setCurrentView('signin')} />;
-      default:
-        return <SignInForm onSubmitAuth={handleAuthentication} onForgotPassword={() => setCurrentView('forgot-password')} />;
-    }
-  };
-
-  const renderToggleButton = () => {
-    if (currentView === 'signin') {
+    if (step === 'code') {
       return (
-        <div className="text-center">
-          <button type="button" className="text-sm text-muted-foreground hover:underline underline-offset-2" onClick={() => setCurrentView('signup')}>
-            Não tem uma conta? Criar conta
-          </button>
-        </div>
+        <VerifyCodeForm
+          email={pendingEmail}
+          onSubmitVerification={code => handleAuthentication(pendingEmail, code)}
+          onBackToEmail={() => setStep('email')}
+        />
       );
     }
-    return null;
+
+    return <SignInForm onSubmitEmail={handleRequestCode} />;
   };
 
   return (
@@ -98,7 +72,6 @@ export function SignIn({
         </div>
 
         {renderForm()}
-        {renderToggleButton()}
       </div>
     </div>
   );

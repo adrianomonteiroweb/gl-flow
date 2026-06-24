@@ -61,7 +61,7 @@ export class SES {
           Data: opts.subject,
         },
       },
-      Source: 'no-reply@solfy.tech',
+      Source: process.env.SES_FROM || 'no-reply@solfy.tech',
     };
 
     const command = new SendEmailCommand(params);
@@ -72,7 +72,7 @@ export class SES {
     const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Construir cabeçalhos do email
-    let rawMessage = `From: ${opts.from || 'no-reply@solfy.tech'}\n`;
+    let rawMessage = `From: ${opts.from || process.env.SES_FROM || 'no-reply@solfy.tech'}\n`;
     rawMessage += `To: ${this._parseEmails(opts.to).join(', ')}\n`;
 
     if (opts.cc) {

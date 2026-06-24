@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { createSession } from '@/actions/auth';
+import { verifyLoginCode } from '@/actions/auth';
 import { AppLoading } from '@/components/commons/loading';
 import { getMe } from '@/actions/users';
 import { SignIn } from '@/components/auth/signin';
@@ -15,7 +15,7 @@ type Props = {
 type ProviderValue = {
   user: any;
   loading: boolean;
-  handleAuthentication: (email: string, password: string) => Promise<any>;
+  handleAuthentication: (email: string, code: string) => Promise<any>;
 };
 
 const SessionContext = createContext<ProviderValue | undefined>(undefined);
@@ -27,7 +27,7 @@ export function SessionProvider({ children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const publicRoutes = ['/login', '/reset-password', '/privacy-policy', '/invite'];
+  const publicRoutes = ['/login', '/privacy-policy', '/invite'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
   useEffect(() => {
@@ -66,9 +66,9 @@ export function SessionProvider({ children }: Props) {
     }
   }, [mounted, loading, user, pathname, router]);
 
-  const handleAuthentication = async (email: string, password: string) => {
+  const handleAuthentication = async (email: string, code: string) => {
     try {
-      const { user, status } = await createSession(email, password);
+      const { user, status } = await verifyLoginCode(email, code);
 
       if (status === 200 || status === 201) {
         setUser(user);

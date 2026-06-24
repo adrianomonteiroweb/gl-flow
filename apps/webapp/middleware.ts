@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const PUBLIC_ROUTES = ['/login', '/privacy-policy', '/reset-password', '/invite'];
+const PUBLIC_ROUTES = ['/login', '/privacy-policy', '/invite'];
 const PUBLIC_PREFIXES = ['/api/webhook', '/api/webhooks'];
 
 const isPublic = (pathname: string): boolean => {

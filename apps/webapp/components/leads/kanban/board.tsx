@@ -196,8 +196,8 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
       <div
-        className="flex w-screen -mx-4 px-4 snap-x snap-mandatory gap-3 overflow-x-auto no-scrollbar md:w-full md:mx-0 md:px-0 md:gap-4 md:snap-none lg:grid lg:grid-cols-2 lg:snap-none lg:overflow-visible"
-        style={{ gridTemplateColumns: colCount > 2 ? `repeat(${colCount}, minmax(0, 1fr))` : undefined }}>
+        className="flex w-screen -mx-4 px-4 snap-x snap-mandatory gap-3 overflow-x-auto no-scrollbar md:w-full md:mx-0 md:px-0 md:gap-4 xl:grid xl:grid-cols-2 xl:snap-none"
+        style={{ gridTemplateColumns: colCount > 2 ? `repeat(${colCount}, minmax(200px, 1fr))` : undefined }}>
         {visibleColumns.map(column => (
           <KanbanColumn
             key={column.id}

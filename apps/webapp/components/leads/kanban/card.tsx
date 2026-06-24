@@ -44,7 +44,7 @@ export const KanbanCard = ({ lead, loadedAt, columns, closedInfo, onUpdated, onO
       onUpdated={onUpdated}
       onOpenDetails={onOpenDetails}
       onMoveStage={onMoveStage}
-      className={cn('group cursor-grab md:touch-none active:cursor-grabbing', isDragging && 'shadow-xl ring-2 ring-ring')}
+      className={cn('group cursor-grab touch-none active:cursor-grabbing', isDragging && 'shadow-xl ring-2 ring-ring')}
     />
   );
 };

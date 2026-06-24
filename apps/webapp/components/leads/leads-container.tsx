@@ -8,7 +8,6 @@ import { Button } from '@workspace/ui/components/button';
 import { Toggle } from '@workspace/ui/components/toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@workspace/ui/components/select';
 import { cn } from '@workspace/ui/lib/utils';
-import { useIsMobile } from '@workspace/ui/hooks/use-mobile';
 import { getLeads, updateLeadStep } from '@/actions/leads';
 import { getAvailablePipelines } from '@/actions/pipelines';
 import { useSearchParams } from '@/hooks/use-search-params';
@@ -27,6 +26,8 @@ import { LeadsFilterBar } from './leads-filter-bar';
 
 export function LeadsContainer() {
   const { mounted, view, setView, pipelineId: selectedPipelineId, setPipelineId: setSelectedPipelineId, teamFilter, setTeamFilter, filtersVisible, setFiltersVisible } = useLeadsPreferences();
+  const [narrowFiltersOpen, setNarrowFiltersOpen] = useState(false);
+  const [isNarrowScreen, setIsNarrowScreen] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
 
   const [loadedAt] = useState(() => {
     const STORAGE_KEY = 'leads-loaded-at';
@@ -67,8 +68,13 @@ export function LeadsContainer() {
   const steps = params.steps ? String(params.steps).split(',').filter(Boolean) : [];
   const taskAlerts = params.taskAlerts ? String(params.taskAlerts).split(',').filter(Boolean) : [];
 
-  const isMobile = useIsMobile();
-  const showFilters = mounted ? (filtersVisible ?? !isMobile) : false;
+  useEffect(() => {
+    const check = () => setIsNarrowScreen(window.innerWidth < 1024);
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const showFilters = mounted ? (isNarrowScreen ? narrowFiltersOpen : (filtersVisible ?? true)) : false;
   const activeFilterCount = steps.length + taskAlerts.length;
 
   const visiblePipelines = useMemo(() => {
@@ -286,7 +292,13 @@ export function LeadsContainer() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => setFiltersVisible(!showFilters)}
+            onClick={() => {
+              if (isNarrowScreen) {
+                setNarrowFiltersOpen(prev => !prev);
+              } else {
+                setFiltersVisible(!showFilters);
+              }
+            }}
             aria-expanded={showFilters}
             className="gap-2">
             <ListFilter className="h-4 w-4" />

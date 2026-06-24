@@ -15,6 +15,13 @@
       "when": 1782239416106,
       "tag": "0001_rare_talos",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782308630275,
+      "tag": "0002_organic_dreaming_celestial",
+      "breakpoints": true
     }
   ]
 }

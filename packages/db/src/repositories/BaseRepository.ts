@@ -85,6 +85,24 @@ export class BaseRepository {
     return created[0];
   }
 
+  /**
+   * Idempotent insert keyed on the primary key — for offline replay. If a row
+   * with the same `id` already exists, the insert is a no-op and the existing
+   * row is returned. Conflicts on other unique constraints still throw, so the
+   * caller can resolve them (e.g. dedupe a person by phone/document).
+   */
+  static async createIdempotent(data: any, opts: any = {}) {
+    const db = opts.tx || this.db;
+
+    const inserted: any = await db.insert(this.model).values(data).onConflictDoNothing({ target: this.model.id }).returning();
+
+    if (inserted[0]) {
+      return inserted[0];
+    }
+
+    return await this.findById(data.id, {}, { tx: opts.tx });
+  }
+
   static async bulkCreate(data: any, opts: any = {}) {
     const db = opts.tx || this.db;
 

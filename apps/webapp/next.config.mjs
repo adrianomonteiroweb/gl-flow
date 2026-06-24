@@ -6,6 +6,8 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV === 'development',
 });
 
+const isVercel = !!process.env.VERCEL;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -15,6 +17,8 @@ const nextConfig = {
   },
 
   async headers() {
+    const vercelHosts = isVercel ? ' https://vercel.com https://*.vercel.app https://*.vercel.sh' : '';
+
     return [
       {
         source: '/(.*)',
@@ -31,12 +35,12 @@ const nextConfig = {
           {
             key: 'Content-Security-Policy',
             value: [
-              "default-src 'self'",
+              `default-src 'self'${vercelHosts}`,
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self'",
-              "connect-src 'self'",
+              `connect-src 'self'${vercelHosts}`,
               "frame-ancestors 'none'",
             ].join('; '),
           },

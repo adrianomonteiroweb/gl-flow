@@ -7,6 +7,7 @@ export type ViewType = 'list' | 'kanban';
 const VIEW_KEY = 'leads-view-preference';
 const PIPELINE_KEY = 'leads-pipeline-preference';
 const TEAM_FILTER_KEY = 'leads-team-filter-preference';
+const FILTERS_VISIBLE_KEY = 'leads-filters-visible-preference';
 
 const readStored = (key: string): string | null => {
   if (typeof window === 'undefined') {
@@ -46,6 +47,8 @@ interface LeadsPreferences {
   setPipelineId: (id: string | null) => void;
   teamFilter: boolean | null;
   setTeamFilter: (value: boolean) => void;
+  filtersVisible: boolean | null;
+  setFiltersVisible: (value: boolean) => void;
 }
 
 export const useLeadsPreferences = (): LeadsPreferences => {
@@ -53,6 +56,7 @@ export const useLeadsPreferences = (): LeadsPreferences => {
   const [view, setViewState] = useState<ViewType>('list');
   const [pipelineId, setPipelineIdState] = useState<string | null>(null);
   const [teamFilter, setTeamFilterState] = useState<boolean | null>(null);
+  const [filtersVisible, setFiltersVisibleState] = useState<boolean | null>(null);
 
   useEffect(() => {
     const savedView = readStored(VIEW_KEY);
@@ -73,6 +77,12 @@ export const useLeadsPreferences = (): LeadsPreferences => {
       setTeamFilterState(savedTeam === 'true');
     }
 
+    const savedFiltersVisible = readStored(FILTERS_VISIBLE_KEY);
+
+    if (savedFiltersVisible !== null) {
+      setFiltersVisibleState(savedFiltersVisible === 'true');
+    }
+
     setMounted(true);
   }, []);
 
@@ -91,5 +101,10 @@ export const useLeadsPreferences = (): LeadsPreferences => {
     writeStored(TEAM_FILTER_KEY, String(next));
   }, []);
 
-  return { mounted, view, setView, pipelineId, setPipelineId, teamFilter, setTeamFilter };
+  const setFiltersVisible = useCallback((next: boolean) => {
+    setFiltersVisibleState(next);
+    writeStored(FILTERS_VISIBLE_KEY, String(next));
+  }, []);
+
+  return { mounted, view, setView, pipelineId, setPipelineId, teamFilter, setTeamFilter, filtersVisible, setFiltersVisible };
 };

@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Users } from 'lucide-react';
+import { Users, ListFilter, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Button } from '@workspace/ui/components/button';
 import { Toggle } from '@workspace/ui/components/toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@workspace/ui/components/select';
 import { cn } from '@workspace/ui/lib/utils';
+import { useIsMobile } from '@workspace/ui/hooks/use-mobile';
 import { getLeads, updateLeadStep } from '@/actions/leads';
 import { getAvailablePipelines } from '@/actions/pipelines';
 import { useSearchParams } from '@/hooks/use-search-params';
@@ -25,7 +26,7 @@ import { ViewToggle, ViewType } from './view-toggle';
 import { LeadsFilterBar } from './leads-filter-bar';
 
 export function LeadsContainer() {
-  const { view, setView, pipelineId: selectedPipelineId, setPipelineId: setSelectedPipelineId, teamFilter, setTeamFilter } = useLeadsPreferences();
+  const { mounted, view, setView, pipelineId: selectedPipelineId, setPipelineId: setSelectedPipelineId, teamFilter, setTeamFilter, filtersVisible, setFiltersVisible } = useLeadsPreferences();
 
   const [loadedAt] = useState(() => {
     const STORAGE_KEY = 'leads-loaded-at';
@@ -65,6 +66,10 @@ export function LeadsContainer() {
   const q = params.q || '';
   const steps = params.steps ? String(params.steps).split(',').filter(Boolean) : [];
   const taskAlerts = params.taskAlerts ? String(params.taskAlerts).split(',').filter(Boolean) : [];
+
+  const isMobile = useIsMobile();
+  const showFilters = mounted ? (filtersVisible ?? !isMobile) : false;
+  const activeFilterCount = steps.length + taskAlerts.length;
 
   const visiblePipelines = useMemo(() => {
     if (!teamFilterActive || teamPipelineIds.length === 0) {
@@ -245,15 +250,15 @@ export function LeadsContainer() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="hidden sm:block text-lg font-semibold text-gray-900">
           {view === 'list' ? 'Visualização em Lista' : 'Visualização em Kanban'}
         </h2>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           {view === 'kanban' && visiblePipelines.length > 0 && (
             <Select value={selectedPipelineId ?? undefined} onValueChange={setSelectedPipelineId}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Pipeline" />
               </SelectTrigger>
               <SelectContent>
@@ -278,28 +283,46 @@ export function LeadsContainer() {
             />
           )}
 
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setFiltersVisible(!showFilters)}
+            aria-expanded={showFilters}
+            className="gap-2">
+            <ListFilter className="h-4 w-4" />
+            Filtros
+            {activeFilterCount > 0 && (
+              <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
+                {activeFilterCount}
+              </span>
+            )}
+            {showFilters ? <ChevronUp className="h-3.5 w-3.5 opacity-60" /> : <ChevronDown className="h-3.5 w-3.5 opacity-60" />}
+          </Button>
+
           <ViewToggle onViewChange={handleViewChange} />
         </div>
       </div>
 
-      <LeadsFilterBar>
-        {hasTeamFilter && (
-          <Toggle
-            size="sm"
-            variant="outline"
-            pressed={teamFilterActive}
-            onPressedChange={setTeamFilter}
-            className={cn(
-              'gap-1.5 rounded-full px-3 h-7 text-xs font-medium border transition-colors',
-              teamFilterActive
-                ? 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/15 hover:text-primary'
-                : 'border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-            )}>
-            <Users className="h-3 w-3" />
-            Meus times
-          </Toggle>
-        )}
-      </LeadsFilterBar>
+      {showFilters && (
+        <LeadsFilterBar>
+          {hasTeamFilter && (
+            <Toggle
+              size="sm"
+              variant="outline"
+              pressed={teamFilterActive}
+              onPressedChange={setTeamFilter}
+              className={cn(
+                'gap-1.5 rounded-full px-3 h-7 text-xs font-medium border transition-colors',
+                teamFilterActive
+                  ? 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/15 hover:text-primary'
+                  : 'border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+              )}>
+              <Users className="h-3 w-3" />
+              Meus times
+            </Toggle>
+          )}
+        </LeadsFilterBar>
+      )}
 
       {error && view === 'kanban' && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">

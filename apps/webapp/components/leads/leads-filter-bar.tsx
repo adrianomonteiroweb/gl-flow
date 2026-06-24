@@ -90,8 +90,8 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
   const activeStepClass = 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/15 hover:text-primary';
 
   return (
-    <div className="flex items-center gap-4 flex-wrap">
-      <div className="flex items-center gap-1.5">
+    <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4 md:flex-wrap">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
         <span className="text-xs font-medium text-muted-foreground mr-0.5">Tarefas</span>
 
         {TASK_ALERT_FILTERS.map(chip => {
@@ -117,9 +117,9 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
 
       {stepFilters.length > 0 && (
         <>
-          <div className="w-px h-5 bg-border" />
+          <div className="hidden md:block w-px h-5 bg-border" />
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
             <span className="text-xs font-medium text-muted-foreground mr-0.5">Etapas</span>
 
             {stepFilters.map(chip => {
@@ -146,7 +146,7 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
 
       {children && (
         <>
-          <div className="w-px h-5 bg-border" />
+          <div className="hidden md:block w-px h-5 bg-border" />
           <div className="flex items-center gap-1.5">{children}</div>
         </>
       )}

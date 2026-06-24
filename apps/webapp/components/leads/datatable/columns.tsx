@@ -59,6 +59,7 @@ export const createColumns = (loadedAt: string): any[] => [
   {
     accessorKey: 'step',
     header: <span className="font-bold">Etapa</span>,
+    meta: { cardLabel: 'Etapa' },
     cell: ({ row }: any) => {
       const stepLabel = row.original.chat?.step_name || getStepLabel(row.original.chat?.step || 'new');
       return (
@@ -72,6 +73,7 @@ export const createColumns = (loadedAt: string): any[] => [
   {
     accessorKey: 'assignee',
     header: <span className="font-bold">Responsável</span>,
+    meta: { cardLabel: 'Responsável' },
     cell: ({ row }: any) => {
       const assignee = row.original.assignee;
       return (
@@ -106,6 +108,7 @@ export const createColumns = (loadedAt: string): any[] => [
   {
     accessorKey: 'updated_at',
     header: <span className="font-bold">Atualizado em</span>,
+    meta: { cardLabel: 'Atualizado em' },
     cell: ({ row }: any) => DateFormatter.dateTime(row.original.chat?.updated_at || row.original.lead?.updated_at),
   },
 ];

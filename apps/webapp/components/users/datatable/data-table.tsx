@@ -48,12 +48,7 @@ export function UsersDataTable() {
         </div>
       </div>
       <DataTableToolbar />
-      <Datatable.Root>
-        <Datatable.Header table={table} />
-        <Datatable.Body table={table} columns={columns} loading={loading}>
-          Nenhum usuário encontrado.
-        </Datatable.Body>
-      </Datatable.Root>
+      <Datatable.Responsive table={table} columns={columns} loading={loading} emptyMessage="Nenhum usuário encontrado." />
       <Datatable.Pagination table={table} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
     </div>
   );

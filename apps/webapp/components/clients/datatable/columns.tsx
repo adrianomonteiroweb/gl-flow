@@ -21,11 +21,12 @@ export const columns: any = [
   {
     accessorKey: 'phone',
     header: 'Telefone',
-    cell: ({ row }: any) => row.original.phone || '—',
+    cell: ({ row }: any) => row.original.phone || row.original.phone_secondary || '—',
   },
   {
     accessorKey: 'address',
     header: 'Cidade',
+    meta: { hideOnCard: true },
     cell: ({ row }: any) => {
       const address = row.original.address as any;
       if (!address?.city) return '—';
@@ -35,6 +36,7 @@ export const columns: any = [
   {
     accessorKey: 'created_at',
     header: 'Criado em',
+    meta: { hideOnCard: true },
     cell: ({ row }: any) => DateFormatter.dateTime(row.original.created_at),
   },
   {

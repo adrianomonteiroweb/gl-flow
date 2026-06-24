@@ -43,21 +43,14 @@ export function ClientsDataTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="hidden sm:block text-lg font-semibold text-gray-900">Clientes</h2>
-        <div className="ml-auto flex items-center gap-2">
-          <CreateClientButton />
-        </div>
+      <div className="hidden lg:flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">Clientes</h2>
+        <CreateClientButton />
       </div>
 
-      <DataTableToolbar />
+      <DataTableToolbar actionSlot={<div className="lg:hidden"><CreateClientButton /></div>} />
 
-      <Datatable.Root>
-        <Datatable.Header table={table} />
-        <Datatable.Body table={table} columns={columns} loading={loading}>
-          Nenhum cliente encontrado.
-        </Datatable.Body>
-      </Datatable.Root>
+      <Datatable.Responsive table={table} columns={columns} loading={loading} emptyMessage="Nenhum cliente encontrado." />
       <Datatable.Pagination table={table} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
     </div>
   );

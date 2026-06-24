@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { SearchInput } from '@workspace/ui/components/input-search';
 import { Switch } from '@workspace/ui/components/switch';
 import { Label } from '@workspace/ui/components/label';
@@ -8,7 +9,11 @@ import { useRef } from 'react';
 import { useSessionContext } from '@/contexts/session';
 import { canAccessSettings } from '@/lib/auth/permissions';
 
-export function DataTableToolbar() {
+interface DataTableToolbarProps {
+  actionSlot?: ReactNode;
+}
+
+export function DataTableToolbar({ actionSlot }: DataTableToolbarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -52,21 +57,20 @@ export function DataTableToolbar() {
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="w-64 max-w-full">
-          <SearchInput value={q} onSearch={handleSearch} className="w-full" debounceMs={500} />
-        </div>
-
-        {showInactiveToggle && (
-          <div className="flex items-center space-x-2">
-            <Switch id="show-inactive" checked={inactive === '1'} onCheckedChange={handleInactiveToggle} />
-            <Label htmlFor="show-inactive" className="text-sm cursor-pointer">
-              Mostrar inativos
-            </Label>
-          </div>
-        )}
+    <div className="flex flex-wrap items-center gap-4">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <SearchInput value={q} onSearch={handleSearch} className="w-full max-w-64" debounceMs={500} />
+        {actionSlot}
       </div>
+
+      {showInactiveToggle && (
+        <div className="flex items-center space-x-2">
+          <Switch id="show-inactive" checked={inactive === '1'} onCheckedChange={handleInactiveToggle} />
+          <Label htmlFor="show-inactive" className="text-sm cursor-pointer">
+            Mostrar inativos
+          </Label>
+        </div>
+      )}
     </div>
   );
 }

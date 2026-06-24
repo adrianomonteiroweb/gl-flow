@@ -2,28 +2,84 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { User, MapPin, Info, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Loader2, UserCheck } from 'lucide-react';
 
-import { createClient } from '@/actions/clients';
+import { onlyNumbers, isCpf, isCnpj, formatPhoneBR } from '@workspace/utils/text';
+import { createClient, lookupClientByDocument, lookupCompanyByCnpj } from '@/actions/clients';
 import { lookupAddressByZip } from '@/actions/cep';
 import { DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@workspace/ui/components/dialog';
 import { Label } from '@workspace/ui/components/label';
 import { Input } from '@workspace/ui/components/input';
-import { Textarea } from '@workspace/ui/components/textarea';
 import { Button } from '@workspace/ui/components/button';
-import SubmitButton from '@workspace/ui/components/submit-button';
+import { Alert, AlertDescription } from '@workspace/ui/components/alert';
+import { SubmitButton } from '@workspace/ui/components/submit-button';
 
-const STEPS: any[] = [
-  { title: 'Dados Pessoais', description: 'Informações básicas do cliente', icon: User },
-  { title: 'Endereço', description: 'Localização do cliente', icon: MapPin },
-  { title: 'Informações adicionais', description: 'Observações sobre o cliente', icon: Info },
-] as const;
+type DocumentStatus = 'idle' | 'loading' | 'found' | 'not-found' | 'error';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^\+?[\d\s\-().]{7,20}$/;
+type AddressState = {
+  zipCode: string;
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+};
+
+type FormState = {
+  personType: 'pf' | 'pj';
+  document: string;
+  name: string;
+  tradeName: string;
+  email: string;
+  phone: string;
+  phoneSecondary: string;
+  birthDate: string;
+  address: AddressState;
+};
+
+const INITIAL_ADDRESS: AddressState = {
+  zipCode: '',
+  street: '',
+  number: '',
+  complement: '',
+  neighborhood: '',
+  city: '',
+  state: '',
+};
+
+const INITIAL_FORM: FormState = {
+  personType: 'pf',
+  document: '',
+  name: '',
+  tradeName: '',
+  email: '',
+  phone: '',
+  phoneSecondary: '',
+  birthDate: '',
+  address: { ...INITIAL_ADDRESS },
+};
+
+const formatDocument = (value: string): string => {
+  const digits = onlyNumbers(value);
+
+  if (digits.length <= 11) {
+    return digits
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+
+  return digits
+    .slice(0, 14)
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+};
 
 const formatZip = (value: string): string => {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
+  const digits = onlyNumbers(value).slice(0, 8);
 
   if (digits.length <= 5) {
     return digits;
@@ -33,12 +89,14 @@ const formatZip = (value: string): string => {
 };
 
 const formatPhone = (value: string): string => {
-  const hasPlus = value.trim().startsWith('+');
-  const digits = value.replace(/\D/g, '').slice(0, 13);
+  const has_plus = value.trim().startsWith('+');
+  const digits = onlyNumbers(value).slice(0, 13);
 
-  if (digits.length === 0) return '';
+  if (digits.length === 0) {
+    return '';
+  }
 
-  if (hasPlus || digits.length > 11) {
+  if (has_plus || digits.length > 11) {
     const country = digits.slice(0, 2);
     const area = digits.slice(2, 4);
     const first = digits.slice(4, 9);
@@ -66,9 +124,9 @@ const formatPhone = (value: string): string => {
   }
 
   const area = digits.slice(0, 2);
-  const middleLen = digits.length > 10 ? 5 : 4;
-  const middle = digits.slice(2, 2 + middleLen);
-  const last = digits.slice(2 + middleLen);
+  const middle_len = digits.length > 10 ? 5 : 4;
+  const middle = digits.slice(2, 2 + middle_len);
+  const last = digits.slice(2 + middle_len);
   let out = '';
 
   if (area) {
@@ -90,58 +148,199 @@ const formatPhone = (value: string): string => {
   return out.trim();
 };
 
-type AddressState = {
-  zipCode: string;
-  street: string;
-  number: string;
-  complement: string;
-  neighborhood: string;
-  city: string;
-  state: string;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export type ClientDialogResult = {
+  id: string;
+  name: string;
+  isExisting: boolean;
 };
 
-export function ClientDialogForm({ onSubmit = () => {} }: { onSubmit?: () => void }) {
-  const [currentStep, setCurrentStep] = useState(0);
+export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?: ClientDialogResult) => void }) => {
+  const [form, setForm] = useState<FormState>({ ...INITIAL_FORM });
+  const [documentStatus, setDocumentStatus] = useState<DocumentStatus>('idle');
+  const [existingClient, setExistingClient] = useState<Record<string, unknown> | null>(null);
+  const [isZipLoading, setIsZipLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const last_fetched_doc_ref = useRef<string>('');
+  const last_fetched_zip_ref = useRef<string>('');
+  const name_input_ref = useRef<HTMLInputElement>(null);
 
-  const [address, setAddress] = useState<AddressState>({
-    zipCode: '',
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-  });
+  const fields_disabled = documentStatus === 'idle' || documentStatus === 'loading';
+  const fields_read_only = documentStatus === 'found';
+  const all_disabled = fields_disabled || fields_read_only;
 
-  const [lossReason, setLossReason] = useState('');
+  const updateForm = (patch: Partial<FormState>): void => {
+    setForm(prev => ({ ...prev, ...patch }));
+  };
 
-  const [isZipLoading, setIsZipLoading] = useState(false);
-  const lastFetchedZipRef = useRef<string>('');
+  const updateAddress = (patch: Partial<AddressState>): void => {
+    setForm(prev => ({ ...prev, address: { ...prev.address, ...patch } }));
+  };
 
-  const isLastStep = currentStep === STEPS.length - 1;
+  const resetForm = (): void => {
+    setForm({ ...INITIAL_FORM });
+    setDocumentStatus('idle');
+    setExistingClient(null);
+    last_fetched_doc_ref.current = '';
+  };
+
+  const populateFromClient = (client: Record<string, unknown>): void => {
+    const addr = (client.address as AddressState) ?? INITIAL_ADDRESS;
+
+    setForm({
+      personType: (client.person_type as 'pf' | 'pj') ?? 'pf',
+      document: formatDocument(String(client.document ?? '')),
+      name: String(client.name ?? ''),
+      tradeName: String(client.trade_name ?? ''),
+      email: String(client.email ?? ''),
+      phone: String(client.phone ?? ''),
+      phoneSecondary: String(client.phone_secondary ?? ''),
+      birthDate: client.birth_date ? String(client.birth_date).slice(0, 10) : '',
+      address: {
+        zipCode: addr.zipCode ?? '',
+        street: addr.street ?? '',
+        number: addr.number ?? '',
+        complement: addr.complement ?? '',
+        neighborhood: addr.neighborhood ?? '',
+        city: addr.city ?? '',
+        state: addr.state ?? '',
+      },
+    });
+  };
+
+  // ─── Document lookup ──────────────────────────────────────────────────────
 
   useEffect(() => {
-    const digits = address.zipCode.replace(/\D/g, '');
+    const digits = onlyNumbers(form.document);
+
+    if (digits.length < 11) {
+      if (last_fetched_doc_ref.current) {
+        resetForm();
+      }
+
+      return;
+    }
+
+    const is_cpf_complete = digits.length === 11 && isCpf(digits);
+    const is_cnpj_complete = digits.length === 14 && isCnpj(digits);
+
+    if (!is_cpf_complete && !is_cnpj_complete) {
+      return;
+    }
+
+    if (digits === last_fetched_doc_ref.current) {
+      return;
+    }
+
+    last_fetched_doc_ref.current = digits;
+    let cancelled = false;
+
+    const run = async (): Promise<void> => {
+      setDocumentStatus('loading');
+      setExistingClient(null);
+
+      try {
+        if (is_cpf_complete) {
+          updateForm({ personType: 'pf' });
+
+          const result = await lookupClientByDocument(digits);
+
+          if (cancelled) {
+            return;
+          }
+
+          if (result.status === 200 && result.data) {
+            setExistingClient(result.data as Record<string, unknown>);
+            populateFromClient(result.data as Record<string, unknown>);
+            setDocumentStatus('found');
+            toast.info('Cliente encontrado na base.');
+            return;
+          }
+
+          setDocumentStatus('not-found');
+          setTimeout(() => name_input_ref.current?.focus(), 50);
+        }
+
+        if (is_cnpj_complete) {
+          updateForm({ personType: 'pj' });
+
+          const result = await lookupCompanyByCnpj(digits);
+
+          if (cancelled) {
+            return;
+          }
+
+          if (result.existingClient) {
+            setExistingClient(result.existingClient as Record<string, unknown>);
+            populateFromClient(result.existingClient as Record<string, unknown>);
+            setDocumentStatus('found');
+            toast.info('Empresa encontrada na base.');
+            return;
+          }
+
+          if (result.company) {
+            const company = result.company;
+            const cidadeParts = (company.cidadeUf ?? '').split('/');
+
+            setForm(prev => ({
+              ...prev,
+              personType: 'pj',
+              name: prev.name || company.razaoSocial,
+              tradeName: prev.tradeName || company.nomeFantasia,
+              phone: prev.phone || (company.telefone ? formatPhoneBR(company.telefone) : ''),
+              email: prev.email || company.email,
+              address: {
+                ...prev.address,
+                street: prev.address.street || company.endereco,
+                neighborhood: prev.address.neighborhood || company.bairro,
+                city: prev.address.city || (cidadeParts[0]?.trim() ?? ''),
+                state: prev.address.state || (cidadeParts[1]?.trim() ?? ''),
+                zipCode: prev.address.zipCode || company.cep,
+              },
+            }));
+
+            toast.success('Dados da empresa preenchidos.');
+          }
+
+          setDocumentStatus('not-found');
+          setTimeout(() => name_input_ref.current?.focus(), 50);
+        }
+      } catch {
+        if (!cancelled) {
+          setDocumentStatus('error');
+          toast.error('Erro ao buscar dados. Preencha manualmente.');
+        }
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.document]);
+
+  // ─── CEP lookup ───────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const digits = onlyNumbers(form.address.zipCode);
 
     if (digits.length !== 8) {
       return;
     }
 
-    if (digits === lastFetchedZipRef.current) {
+    if (digits === last_fetched_zip_ref.current) {
       return;
     }
 
-    lastFetchedZipRef.current = digits;
-
+    last_fetched_zip_ref.current = digits;
     let cancelled = false;
 
     const run = async (): Promise<void> => {
       setIsZipLoading(true);
+
       try {
         const result = await lookupAddressByZip(digits);
 
@@ -154,13 +353,12 @@ export function ClientDialogForm({ onSubmit = () => {} }: { onSubmit?: () => voi
           return;
         }
 
-        setAddress(prev => ({
-          ...prev,
-          street: prev.street || result.street,
-          neighborhood: prev.neighborhood || result.neighborhood,
-          city: prev.city || result.city,
-          state: prev.state || result.state,
-        }));
+        updateAddress({
+          street: form.address.street || result.street,
+          neighborhood: form.address.neighborhood || result.neighborhood,
+          city: form.address.city || result.city,
+          state: form.address.state || result.state,
+        });
       } finally {
         if (!cancelled) {
           setIsZipLoading(false);
@@ -173,88 +371,85 @@ export function ClientDialogForm({ onSubmit = () => {} }: { onSubmit?: () => voi
     return () => {
       cancelled = true;
     };
-  }, [address.zipCode]);
+  }, [form.address.zipCode]);
 
-  const updateAddress = (patch: Partial<AddressState>): void => {
-    setAddress(prev => ({ ...prev, ...patch }));
-  };
+  // ─── Validation & Submit ──────────────────────────────────────────────────
 
-  const validateStep = (): boolean => {
-    if (currentStep === 0) {
-      if (!name.trim()) {
-        toast.error('Nome é obrigatório.');
-        return false;
-      }
+  const validate = (): boolean => {
+    const digits = onlyNumbers(form.document);
 
-      if (email.trim() && !EMAIL_REGEX.test(email.trim())) {
-        toast.error('E-mail inválido.');
-        return false;
-      }
+    if (!digits) {
+      toast.error('Informe o CPF ou CNPJ.');
+      return false;
+    }
 
-      if (phone.trim() && !PHONE_REGEX.test(phone.trim())) {
-        toast.error('Telefone inválido.');
-        return false;
-      }
+    if (digits.length !== 11 && digits.length !== 14) {
+      toast.error('CPF deve ter 11 dígitos ou CNPJ 14 dígitos.');
+      return false;
+    }
 
+    if (documentStatus === 'found') {
       return true;
     }
 
-    if (currentStep === 1) {
-      const zipDigits = address.zipCode.replace(/\D/g, '');
+    if (!form.name.trim()) {
+      toast.error('Nome é obrigatório.');
+      return false;
+    }
 
-      if (zipDigits && zipDigits.length !== 8) {
-        toast.error('CEP deve ter 8 dígitos.');
-        return false;
-      }
+    if (!form.phone.trim() && !form.phoneSecondary.trim()) {
+      toast.error('Informe ao menos um telefone ou WhatsApp.');
+      return false;
+    }
 
-      if (address.state && !/^[A-Z]{2}$/.test(address.state)) {
-        toast.error('Estado deve ter 2 letras (ex: SP).');
-        return false;
-      }
-
-      return true;
+    if (form.email.trim() && !EMAIL_REGEX.test(form.email.trim())) {
+      toast.error('E-mail inválido.');
+      return false;
     }
 
     return true;
   };
 
-  const handleNext = (): void => {
-    if (!validateStep()) {
-      return;
-    }
-
-    setCurrentStep(prev => prev + 1);
-  };
-
-  const handleBack = (): void => {
-    setCurrentStep(prev => prev - 1);
-  };
-
   const handleSubmit = async (): Promise<void> => {
-    if (!validateStep()) {
+    if (!validate()) {
       return;
     }
-    setIsSubmitting(true);
-    try {
-      const zipDigits = address.zipCode.replace(/\D/g, '');
 
-      const clientData = {
-        name,
-        email: email || undefined,
-        phone: phone || undefined,
-        loss_reason: lossReason || undefined,
+    if (documentStatus === 'found' && existingClient) {
+      onSubmit({
+        id: String(existingClient.id),
+        name: String(existingClient.name),
+        isExisting: true,
+      });
+
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        person_type: form.personType,
+        name: form.name,
+        trade_name: form.tradeName || undefined,
+        document: onlyNumbers(form.document) || undefined,
+        email: form.email || undefined,
+        phone: form.phone || undefined,
+        phone_secondary: form.phoneSecondary || undefined,
+        birth_date: form.birthDate || undefined,
         address: {
-          zipCode: zipDigits || undefined,
-          street: address.street || undefined,
-          number: address.number || undefined,
-          complement: address.complement || undefined,
-          neighborhood: address.neighborhood || undefined,
-          city: address.city || undefined,
-          state: address.state || undefined,
+          zipCode: onlyNumbers(form.address.zipCode) || undefined,
+          street: form.address.street || undefined,
+          number: form.address.number || undefined,
+          complement: form.address.complement || undefined,
+          neighborhood: form.address.neighborhood || undefined,
+          city: form.address.city || undefined,
+          state: form.address.state || undefined,
         },
+        client_created_at: new Date().toISOString(),
       };
 
-      const result = await createClient(clientData);
+      const result = await createClient(payload);
 
       if (result?.status !== 200) {
         toast.error(result?.message ?? 'Ocorreu um erro ao criar o cliente.');
@@ -262,183 +457,221 @@ export function ClientDialogForm({ onSubmit = () => {} }: { onSubmit?: () => voi
       }
 
       toast.success('Cliente criado com sucesso.');
-      onSubmit();
       document.dispatchEvent(new Event('clients:updated'));
-    } catch (error) {
-      console.error(error);
+
+      const created = result.data as Record<string, unknown> | undefined;
+
+      onSubmit(created ? { id: String(created.id), name: String(created.name), isExisting: false } : undefined);
+    } catch {
       toast.error('Ops! Ocorreu um erro ao processar sua requisição.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const StepIcon = STEPS[currentStep].icon;
+  const digits = onlyNumbers(form.document);
+  const documentLabel = digits.length < 11 ? 'CPF ou CNPJ' : form.personType === 'pj' ? 'CNPJ' : 'CPF';
+  const documentPlaceholder = form.personType === 'pj' ? '00.000.000/0000-00' : '000.000.000-00';
 
   return (
     <div>
       <DialogHeader>
-        <DialogTitle>Novo Cliente</DialogTitle>
-        <DialogDescription>
-          Passo {currentStep + 1} de {STEPS.length}
-        </DialogDescription>
+        <DialogTitle>Identificação do Cliente</DialogTitle>
       </DialogHeader>
 
-      <div className="flex items-center gap-2 mt-4 mb-6">
-        {STEPS.map((step, index) => (
-          <div key={step.title} className="flex items-center gap-2 flex-1">
-            <div
-              className={`flex items-center justify-center h-8 w-8 rounded-full text-xs font-semibold shrink-0 ${
-                index <= currentStep ? 'bg-primary text-primary-foreground' : 'bg-gray-100 text-gray-400'
-              }`}>
-              {index + 1}
-            </div>
-            <span className={`text-sm hidden sm:block truncate ${index === currentStep ? 'font-medium text-gray-900' : 'text-gray-400'}`}>
-              {step.title}
-            </span>
-            {index < STEPS.length - 1 && <div className="flex-1 h-px bg-gray-200 min-w-4" />}
-          </div>
-        ))}
-      </div>
+      {documentStatus === 'found' && (
+        <Alert className="mt-4 border-blue-200 bg-blue-50 text-blue-800">
+          <UserCheck className="h-4 w-4" />
+          <AlertDescription>Cliente já cadastrado.</AlertDescription>
+        </Alert>
+      )}
 
-      <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-gray-50">
-        <StepIcon className="h-4 w-4 text-gray-500" />
-        <div>
-          <p className="text-sm font-medium text-gray-700">{STEPS[currentStep].title}</p>
-          <p className="text-xs text-gray-500">{STEPS[currentStep].description}</p>
+      <div className="mt-6 space-y-4">
+        {/* Row 1: Documento + Nome */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="document-input">{documentLabel} *</Label>
+            <div className="relative">
+              <Input
+                id="document-input"
+                value={form.document}
+                onChange={e => updateForm({ document: formatDocument(e.target.value) })}
+                placeholder={documentPlaceholder}
+                inputMode="numeric"
+                autoFocus
+                disabled={fields_read_only}
+              />
+              {documentStatus === 'loading' && (
+                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Informe o CPF ou CNPJ</p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name-input">{form.personType === 'pj' ? 'Razão Social' : 'Nome Completo'} *</Label>
+            <Input
+              ref={name_input_ref}
+              id="name-input"
+              value={form.name}
+              onChange={e => updateForm({ name: e.target.value })}
+              placeholder={all_disabled ? `Preenchido automaticamente via ${documentLabel}` : 'Ex: João da Silva'}
+              disabled={all_disabled}
+            />
+          </div>
+        </div>
+
+        {/* PJ-only: Nome Fantasia */}
+        {form.personType === 'pj' && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="trade-name-input">Nome Fantasia</Label>
+            <Input
+              id="trade-name-input"
+              value={form.tradeName}
+              onChange={e => updateForm({ tradeName: e.target.value })}
+              placeholder={all_disabled ? 'Preenchido automaticamente via CNPJ' : 'Ex: Loja Central'}
+              disabled={all_disabled}
+            />
+          </div>
+        )}
+
+        {/* Row 2: Telefone + WhatsApp + Email (+ Nascimento se PF) */}
+        <div className={`grid grid-cols-2 gap-4 ${form.personType === 'pj' ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="phone-input">Telefone</Label>
+            <Input
+              id="phone-input"
+              value={form.phone}
+              onChange={e => updateForm({ phone: formatPhone(e.target.value) })}
+              placeholder={all_disabled ? `Via ${documentLabel}` : '(00) 00000-0000'}
+              disabled={all_disabled}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="phone-secondary-input">WhatsApp</Label>
+            <Input
+              id="phone-secondary-input"
+              value={form.phoneSecondary}
+              onChange={e => updateForm({ phoneSecondary: formatPhone(e.target.value) })}
+              placeholder={all_disabled ? `Via ${documentLabel}` : '(00) 00000-0000'}
+              disabled={all_disabled}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email-input">Email</Label>
+            <Input
+              id="email-input"
+              type="email"
+              value={form.email}
+              onChange={e => updateForm({ email: e.target.value })}
+              placeholder={all_disabled ? `Via ${documentLabel}` : 'nome@email.com'}
+              disabled={all_disabled}
+            />
+          </div>
+
+          {form.personType === 'pf' && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="birth-date-input">Data de Nascimento</Label>
+              <Input
+                id="birth-date-input"
+                type="date"
+                value={form.birthDate}
+                onChange={e => updateForm({ birthDate: e.target.value })}
+                disabled={all_disabled}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Row 3: CEP + Endereço + Número + Bairro */}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="zip-input">CEP</Label>
+            <div className="relative">
+              <Input
+                id="zip-input"
+                value={form.address.zipCode}
+                onChange={e => updateAddress({ zipCode: formatZip(e.target.value) })}
+                placeholder={all_disabled ? `Via ${documentLabel}` : '00000-000'}
+                inputMode="numeric"
+                disabled={all_disabled}
+              />
+              {isZipLoading && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="street-input">Endereço</Label>
+            <Input
+              id="street-input"
+              value={form.address.street}
+              onChange={e => updateAddress({ street: e.target.value })}
+              placeholder={all_disabled ? 'Preenchido automaticamente via CEP' : 'Rua, Avenida...'}
+              disabled={all_disabled}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="number-input">Número</Label>
+            <Input
+              id="number-input"
+              value={form.address.number}
+              onChange={e => updateAddress({ number: e.target.value })}
+              placeholder={all_disabled ? `Via ${documentLabel}` : 'Nº'}
+              disabled={all_disabled}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="neighborhood-input">Bairro</Label>
+            <Input
+              id="neighborhood-input"
+              value={form.address.neighborhood}
+              onChange={e => updateAddress({ neighborhood: e.target.value })}
+              placeholder={all_disabled ? 'Preenchido automaticamente via CEP' : 'Bairro'}
+              disabled={all_disabled}
+            />
+          </div>
+        </div>
+
+        {/* Row 4: Cidade + UF */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="flex flex-col gap-2 col-span-2">
+            <Label htmlFor="city-input">Cidade</Label>
+            <Input
+              id="city-input"
+              value={form.address.city}
+              onChange={e => updateAddress({ city: e.target.value })}
+              placeholder={all_disabled ? 'Preenchido automaticamente via CEP' : 'Cidade'}
+              disabled={all_disabled}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="state-input">UF</Label>
+            <Input
+              id="state-input"
+              value={form.address.state}
+              onChange={e => updateAddress({ state: e.target.value.toUpperCase().slice(0, 2) })}
+              placeholder={all_disabled ? 'UF' : 'SP'}
+              maxLength={2}
+              disabled={all_disabled}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="min-h-[240px]">
-        {currentStep === 0 && (
-          <div className="grid gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="name-input">Nome *</Label>
-              <Input id="name-input" value={name} onChange={e => setName(e.target.value)} placeholder="Ex: João da Silva" autoFocus />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email-input">E-mail</Label>
-              <Input id="email-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Ex: nome@email.com" />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="phone-input">Telefone</Label>
-              <Input id="phone-input" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="Ex: (11) 99999-9999" />
-            </div>
-          </div>
-        )}
-
-        {currentStep === 1 && (
-          <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="zipCode-input">CEP</Label>
-                <div className="relative">
-                  <Input
-                    id="zipCode-input"
-                    value={address.zipCode}
-                    onChange={e => updateAddress({ zipCode: formatZip(e.target.value) })}
-                    placeholder="Ex: 01001-000"
-                    autoFocus
-                  />
-                  {isZipLoading && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="state-input">Estado</Label>
-                <Input
-                  id="state-input"
-                  value={address.state}
-                  onChange={e => updateAddress({ state: e.target.value.toUpperCase().slice(0, 2) })}
-                  placeholder="Ex: SP"
-                  maxLength={2}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="city-input">Cidade</Label>
-              <Input id="city-input" value={address.city} onChange={e => updateAddress({ city: e.target.value })} placeholder="Ex: São Paulo" />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="neighborhood-input">Bairro</Label>
-              <Input
-                id="neighborhood-input"
-                value={address.neighborhood}
-                onChange={e => updateAddress({ neighborhood: e.target.value })}
-                placeholder="Ex: Centro"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col gap-2 col-span-2">
-                <Label htmlFor="street-input">Logradouro</Label>
-                <Input
-                  id="street-input"
-                  value={address.street}
-                  onChange={e => updateAddress({ street: e.target.value })}
-                  placeholder="Ex: Rua das Flores"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="number-input">Número</Label>
-                <Input id="number-input" value={address.number} onChange={e => updateAddress({ number: e.target.value })} placeholder="Ex: 123" />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="complement-input">Complemento</Label>
-              <Input
-                id="complement-input"
-                value={address.complement}
-                onChange={e => updateAddress({ complement: e.target.value })}
-                placeholder="Ex: Apto 101"
-              />
-            </div>
-          </div>
-        )}
-
-        {currentStep === 2 && (
-          <div className="grid gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="loss-reason-input">Motivo de perda</Label>
-              <Textarea
-                id="loss-reason-input"
-                value={lossReason}
-                onChange={e => setLossReason(e.target.value.slice(0, 500))}
-                placeholder="Descreva o motivo de perda..."
-                className="min-h-[120px] resize-none"
-                maxLength={500}
-                autoFocus
-              />
-              <p className="text-xs text-gray-400 text-right">{lossReason.length}/500</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <DialogFooter className="mt-6 flex items-center gap-2">
-        {currentStep > 0 && (
-          <Button type="button" variant="outline" onClick={handleBack}>
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Voltar
-          </Button>
-        )}
+      <DialogFooter className="mt-6 flex flex-row justify-between gap-2">
+        <Button type="button" variant="ghost" onClick={() => onSubmit()}>
+          Cancelar
+        </Button>
         <div className="flex-1" />
-        {isLastStep ? (
-          <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit}>
-            Salvar
-          </SubmitButton>
-        ) : (
-          <Button type="button" onClick={handleNext}>
-            Próximo
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        )}
+        <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit}>
+          Salvar
+        </SubmitButton>
       </DialogFooter>
     </div>
   );
-}
+};

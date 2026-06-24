@@ -10,5 +10,7 @@ export * from './repositories/LeadActivityRepository';
 export * from './repositories/TaskRepository';
 export * from './repositories/LossReasonRepository';
 export * from './repositories/BranchRepository';
+export * from './repositories/ClientRepository';
+export * from './repositories/NegotiationRepository';
 export * from './repositories/VehicleRepository';
 export * from './repositories/NegotiationVehicleRepository';

@@ -18,6 +18,7 @@ export const columns: any = [
   {
     accessorKey: 'role',
     header: 'Papel',
+    meta: { cardRole: 'badge' },
     cell: ({ row }: any) => {
       const role = row.original.role;
       return <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(role)}`}>{getRoleLabel(role)}</span>;

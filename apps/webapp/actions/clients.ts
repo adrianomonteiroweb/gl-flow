@@ -2,59 +2,140 @@
 
 import { z } from 'zod';
 
-import { PipelineRepository, StepRepository, StatusRepository } from '@workspace/db';
+import { ClientRepository, PipelineRepository, StepRepository, StatusRepository } from '@workspace/db';
+import { onlyNumbers } from '@workspace/utils/text';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
 import { isLeadScopeRestricted, canAccessSettings, canAssignLeads } from '@/lib/auth/permissions';
 import { LeadActivityLogger } from '@/lib/activities/lead-activity-logger';
 import { resolveWorkspaceId } from '@/lib/workspaces/development-workspace';
 import { getStepLabel, getStatusLabel } from '@/utils/status-utils';
+import { fetchCompanyByCnpj, type BrasilApiCompany } from '@/lib/brasilapi';
 
 import { getMe } from './users';
 
-const CreateClientSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  phone: z
-    .string()
-    .regex(/^\+?[\d\s\-().]{7,20}$/, 'Telefone inválido')
-    .optional()
-    .or(z.literal('')),
-  address: z
-    .object({
-      zipCode: z.string().optional(),
-      street: z.string().optional(),
-      number: z.string().optional(),
-      complement: z.string().optional(),
-      neighborhood: z.string().optional(),
-      city: z.string().optional(),
-      state: z.string().max(2, 'Estado deve ter 2 letras').optional(),
-    })
-    .optional(),
-  loss_reason: z.string().max(500, 'Motivo de perda muito longo').optional().or(z.literal('')),
+const PHONE_REGEX = /^\+?[\d\s\-().]{7,20}$/;
+
+const AddressSchema = z.object({
+  zipCode: z.string().optional(),
+  street: z.string().optional(),
+  number: z.string().optional(),
+  complement: z.string().optional(),
+  neighborhood: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().max(2, 'Estado deve ter 2 letras').optional(),
 });
+
+const CreateClientSchema = z
+  .object({
+    person_type: z.enum(['pf', 'pj']).default('pf'),
+    name: z.string().min(1, 'Nome é obrigatório'),
+    trade_name: z.string().optional().or(z.literal('')),
+    document: z.string().optional().or(z.literal('')),
+    email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+    phone: z.string().regex(PHONE_REGEX, 'Telefone inválido').optional().or(z.literal('')),
+    phone_secondary: z.string().regex(PHONE_REGEX, 'WhatsApp inválido').optional().or(z.literal('')),
+    birth_date: z.string().optional().or(z.literal('')),
+    address: AddressSchema.optional(),
+    client_created_at: z.string().optional(),
+  })
+  .refine(d => !!(d.phone || d.phone_secondary), {
+    message: 'Informe ao menos um telefone ou WhatsApp.',
+    path: ['phone'],
+  });
 
 const UpdateClientSchema = z.object({
+  person_type: z.enum(['pf', 'pj']).optional(),
   name: z.string().min(1, 'Nome é obrigatório').optional(),
+  trade_name: z.string().optional().or(z.literal('')),
+  document: z.string().optional().or(z.literal('')),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  phone: z
-    .string()
-    .regex(/^\+?[\d\s\-().]{7,20}$/, 'Telefone inválido')
-    .optional()
-    .or(z.literal('')),
-  address: z
-    .object({
-      zipCode: z.string().optional(),
-      street: z.string().optional(),
-      number: z.string().optional(),
-      complement: z.string().optional(),
-      neighborhood: z.string().optional(),
-      city: z.string().optional(),
-      state: z.string().max(2, 'Estado deve ter 2 letras').optional(),
-    })
-    .optional(),
+  phone: z.string().regex(PHONE_REGEX, 'Telefone inválido').optional().or(z.literal('')),
+  phone_secondary: z.string().regex(PHONE_REGEX, 'WhatsApp inválido').optional().or(z.literal('')),
+  birth_date: z.string().optional().or(z.literal('')),
+  address: AddressSchema.optional(),
 });
 
-export async function getClients(params: Omit<GetLeadParams, 'workspace_id'>) {
+// ─── Document / Company lookups ──────────────────────────────────────────────
+
+export const lookupClientByDocument = async (document: string) => {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { status: 401, message: 'Usuário não autenticado' };
+    }
+
+    const workspaceId = await resolveWorkspaceId(me);
+
+    if (!workspaceId) {
+      return { status: 400, message: 'Workspace não encontrado.' };
+    }
+
+    const digits = onlyNumbers(document);
+
+    if (digits.length !== 11 && digits.length !== 14) {
+      return { status: 400, message: 'Documento deve ter 11 (CPF) ou 14 (CNPJ) dígitos.' };
+    }
+
+    const existing = await ClientRepository.findByDocument(workspaceId, digits);
+
+    if (existing) {
+      return { status: 200, data: existing };
+    }
+
+    return { status: 404 };
+  } catch (error: unknown) {
+    console.error('Erro ao buscar cliente por documento:', error);
+    return { status: 500, message: 'Erro ao buscar cliente.' };
+  }
+};
+
+export const lookupCompanyByCnpj = async (cnpj: string) => {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { status: 401, message: 'Usuário não autenticado' };
+    }
+
+    const workspaceId = await resolveWorkspaceId(me);
+
+    if (!workspaceId) {
+      return { status: 400, message: 'Workspace não encontrado.' };
+    }
+
+    const digits = onlyNumbers(cnpj);
+
+    if (digits.length !== 14) {
+      return { status: 400, message: 'CNPJ deve ter 14 dígitos.' };
+    }
+
+    const [existingClient, company] = await Promise.all([
+      ClientRepository.findByDocument(workspaceId, digits),
+      fetchCompanyByCnpj(digits),
+    ]);
+
+    return {
+      status: 200,
+      existingClient: existingClient ?? undefined,
+      company: company ?? undefined,
+    };
+  } catch (error: unknown) {
+    console.error('Erro ao buscar empresa por CNPJ:', error);
+    return { status: 500, message: 'Erro ao buscar dados da empresa.' };
+  }
+};
+
+type GetClientParams = {
+  q?: string;
+  page?: number;
+  page_size?: number;
+  includeInactive?: boolean;
+  assigneeId?: string;
+  unassignedOnly?: boolean;
+};
+
+export const getClients = async (params: GetClientParams) => {
   const me = await getMe();
   const workspace_id = await resolveWorkspaceId(me);
 
@@ -65,7 +146,7 @@ export async function getClients(params: Omit<GetLeadParams, 'workspace_id'>) {
   const includeInactive = params.includeInactive && me && canAccessSettings(me.role) ? true : false;
 
   if (me && isLeadScopeRestricted(me.role)) {
-    return await LeadRepository.getClients({
+    return await ClientRepository.getClients({
       workspace_id,
       q: params.q,
       page: params.page,
@@ -75,7 +156,7 @@ export async function getClients(params: Omit<GetLeadParams, 'workspace_id'>) {
     });
   }
 
-  return await LeadRepository.getClients({
+  return await ClientRepository.getClients({
     workspace_id,
     q: params.q,
     page: params.page,
@@ -84,7 +165,7 @@ export async function getClients(params: Omit<GetLeadParams, 'workspace_id'>) {
     assigneeId: params.assigneeId,
     unassignedOnly: params.unassignedOnly,
   });
-}
+};
 
 type AssigneeActivity = {
   /** Activity type to log. Defaults to 'assignee_changed' ("Responsável alterado"). */
@@ -313,7 +394,7 @@ export async function distributeClients(params: DistributeParams) {
   }
 }
 
-export async function createClient(data: any) {
+export async function createClient(data: unknown) {
   try {
     const me = await getMe();
 
@@ -335,22 +416,23 @@ export async function createClient(data: any) {
     }
 
     const { address, ...rest } = parsed.data;
-
     const hasAddress = address && Object.values(address).some(v => v);
+    const cleanDocument = rest.document ? onlyNumbers(rest.document) : undefined;
 
-    // Place the new lead at the start of the default pipeline.
-    const pipeline = await PipelineRepository.findDefaultByWorkspace(workspaceId);
-    const firstStep = pipeline ? await StepRepository.findFirstByPipeline(workspaceId, pipeline.id) : null;
-    const initialStatus = await StatusRepository.findBySlug(workspaceId, 'novo');
-
-    const clientData: any = {
-      name: rest.name,
+    const clientData: Record<string, unknown> = {
       workspace_id: workspaceId,
       assignee_id: me.id,
-      pipeline_id: pipeline?.id ?? null,
-      step_id: firstStep?.id ?? null,
-      status_id: initialStatus?.id ?? null,
+      person_type: rest.person_type,
+      name: rest.name,
     };
+
+    if (rest.trade_name) {
+      clientData.trade_name = rest.trade_name;
+    }
+
+    if (cleanDocument) {
+      clientData.document = cleanDocument;
+    }
 
     if (rest.email) {
       clientData.email = rest.email;
@@ -360,15 +442,23 @@ export async function createClient(data: any) {
       clientData.phone = rest.phone;
     }
 
-    if (rest.loss_reason) {
-      clientData.loss_reason = rest.loss_reason;
+    if (rest.phone_secondary) {
+      clientData.phone_secondary = rest.phone_secondary;
+    }
+
+    if (rest.birth_date) {
+      clientData.birth_date = rest.birth_date;
     }
 
     if (hasAddress) {
       clientData.address = address;
     }
 
-    const created = await LeadRepository.create(clientData);
+    if (rest.client_created_at) {
+      clientData.client_created_at = rest.client_created_at;
+    }
+
+    const created = await ClientRepository.createIdempotent(clientData);
 
     LeadActivityLogger.log({
       workspace_id: workspaceId,
@@ -377,15 +467,19 @@ export async function createClient(data: any) {
       actor_type: 'user',
       actor_id: me.id,
       actor_name: me.name,
-      metadata: { origin: 'manual' },
+      metadata: { origin: 'manual', person_type: rest.person_type, entity: 'client' },
     });
 
     return { status: 200, data: created };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao criar cliente:', error);
-    const constraint = error.constraint ?? error.cause?.constraint;
+    const constraint = (error as any)?.constraint ?? (error as any)?.cause?.constraint;
 
-    if (constraint === 'uq_lead_phone_workspace') {
+    if (constraint === 'uq_client_workspace_document') {
+      return { status: 400, message: 'Já existe um cliente com este CPF/CNPJ cadastrado.' };
+    }
+
+    if (constraint === 'uq_client_workspace_phone') {
       return { status: 400, message: 'Já existe um cliente com este telefone cadastrado.' };
     }
 
@@ -393,7 +487,7 @@ export async function createClient(data: any) {
   }
 }
 
-export async function updateClient(id: string, data: any) {
+export async function updateClient(id: string, data: unknown) {
   try {
     const me = await getMe();
 
@@ -409,11 +503,22 @@ export async function updateClient(id: string, data: any) {
     }
 
     const { address, ...rest } = parsed.data;
+    const updateData: Record<string, unknown> = {};
 
-    const updateData: any = {};
+    if (rest.person_type !== undefined) {
+      updateData.person_type = rest.person_type;
+    }
 
     if (rest.name !== undefined) {
       updateData.name = rest.name;
+    }
+
+    if (rest.trade_name !== undefined) {
+      updateData.trade_name = rest.trade_name || null;
+    }
+
+    if (rest.document !== undefined) {
+      updateData.document = rest.document ? onlyNumbers(rest.document) : null;
     }
 
     if (rest.email !== undefined) {
@@ -424,6 +529,14 @@ export async function updateClient(id: string, data: any) {
       updateData.phone = rest.phone || null;
     }
 
+    if (rest.phone_secondary !== undefined) {
+      updateData.phone_secondary = rest.phone_secondary || null;
+    }
+
+    if (rest.birth_date !== undefined) {
+      updateData.birth_date = rest.birth_date || null;
+    }
+
     if (address) {
       const hasAddress = Object.values(address).some(v => v);
 
@@ -432,14 +545,18 @@ export async function updateClient(id: string, data: any) {
       }
     }
 
-    const updated = await LeadRepository.update(id, updateData);
+    const updated = await ClientRepository.update(id, updateData);
 
     return { status: 200, data: updated };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao atualizar cliente:', error);
-    const constraint = error.constraint ?? error.cause?.constraint;
+    const constraint = (error as any)?.constraint ?? (error as any)?.cause?.constraint;
 
-    if (constraint === 'uq_lead_phone_workspace') {
+    if (constraint === 'uq_client_workspace_document') {
+      return { status: 400, message: 'Já existe um cliente com este CPF/CNPJ cadastrado.' };
+    }
+
+    if (constraint === 'uq_client_workspace_phone') {
       return { status: 400, message: 'Já existe um cliente com este telefone cadastrado.' };
     }
 

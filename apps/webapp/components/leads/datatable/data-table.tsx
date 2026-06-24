@@ -68,12 +68,13 @@ export function LeadsDataTable({ loadedAt, pipelineIds }: LeadsDataTableProps) {
   return (
     <div className="space-y-4">
       <DataTableToolbar />
-      <Datatable.Root>
-        <Datatable.Header table={table} />
-        <Datatable.Body table={table} columns={columns} loading={loading} onRowClick={handleRowClick}>
-          Nenhum lead encontrado.
-        </Datatable.Body>
-      </Datatable.Root>
+      <Datatable.Responsive
+        table={table}
+        columns={columns}
+        loading={loading}
+        onRowClick={handleRowClick}
+        emptyMessage="Nenhum lead encontrado."
+      />
       <Datatable.Pagination table={table} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
     </div>
   );

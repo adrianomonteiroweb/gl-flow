@@ -1,12 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/followup",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/automation-timeout",
-      "schedule": "0 * * * *"
-    }
-  ]
-}
+{}

@@ -3,7 +3,7 @@
 import { DateFormatter } from '@workspace/utils';
 import { InactivateClientButton } from '../delete-button';
 import { ReactivateClientButton } from '../reactivate-button';
-import { DetailClientButton } from '../detail-button';
+import { EditClientButton } from '../edit-button';
 import { Badge } from '@workspace/ui/components/badge';
 import { useSessionContext } from '@/contexts/session';
 import { canAccessSettings } from '@/lib/auth/permissions';
@@ -30,7 +30,7 @@ export const columns: any = [
   },
   {
     accessorKey: 'phone',
-    header: 'Telefone',
+    header: 'WhatsApp / Telefone',
     cell: ({ row }: any) => row.original.phone || row.original.phone_secondary || '—',
   },
   {
@@ -77,7 +77,7 @@ export const columns: any = [
 
       return (
         <div className="flex items-center gap-2">
-          <DetailClientButton client={client} />
+          <EditClientButton client={client} />
           {!isInactive && <InactivateClientButton client={client} />}
           {canReactivate && <ReactivateClientButton client={client} />}
         </div>

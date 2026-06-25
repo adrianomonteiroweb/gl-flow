@@ -15,9 +15,11 @@ type AddressFieldsProps = {
   pathPrefix: string;
   disabled?: boolean;
   online?: boolean;
+  /** When false, the CEP is never looked up against the address API (e.g. existing client). */
+  autoFetch?: boolean;
 };
 
-export const AddressFields = ({ pathPrefix, disabled = false, online = true }: AddressFieldsProps) => {
+export const AddressFields = ({ pathPrefix, disabled = false, online = true, autoFetch = true }: AddressFieldsProps) => {
   const form = useFormContext<ClientFormValues>();
   const [isZipLoading, setIsZipLoading] = useState(false);
   const last_fetched_zip_ref = useRef<string>('');
@@ -29,7 +31,7 @@ export const AddressFields = ({ pathPrefix, disabled = false, online = true }: A
   useEffect(() => {
     const digits = onlyNumbers(zipValue ?? '');
 
-    if (digits.length !== 8 || digits === last_fetched_zip_ref.current || !online) {
+    if (!autoFetch || digits.length !== 8 || digits === last_fetched_zip_ref.current || !online) {
       return;
     }
 
@@ -75,7 +77,7 @@ export const AddressFields = ({ pathPrefix, disabled = false, online = true }: A
     return () => {
       cancelled = true;
     };
-  }, [zipValue, online, pathPrefix]);
+  }, [zipValue, online, autoFetch, pathPrefix]);
 
   return (
     <div className="space-y-4">

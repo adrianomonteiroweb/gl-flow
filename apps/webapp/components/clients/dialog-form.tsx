@@ -1,16 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useForm, useFieldArray, type FieldPath } from 'react-hook-form';
+import { useForm, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { AlertCircle, CloudOff, Loader2, Plus, UserCheck, WifiOff } from 'lucide-react';
+import { AlertCircle, CloudOff, Loader2, Pencil, UserCheck, WifiOff } from 'lucide-react';
 
 import { onlyNumbers, isCpf, isCnpj } from '@workspace/utils/text';
-import { createClient, lookupClientByDocument, lookupCompanyByCnpj } from '@/actions/clients';
+import { createClient, updateClient, lookupClientByDocument, lookupCompanyByCnpj } from '@/actions/clients';
 import { useOfflineSyncContext, type ClientPayload } from '@/contexts/offline-sync';
 import type { BrasilApiCompany } from '@/lib/brasilapi';
-import { MARITAL_STATUS_OPTIONS } from '@/lib/clients/marital-status';
 import { DialogFooter, DialogHeader, DialogTitle } from '@workspace/ui/components/dialog';
 import { Input } from '@workspace/ui/components/input';
 import { Button } from '@workspace/ui/components/button';
@@ -19,12 +18,12 @@ import { SubmitButton } from '@workspace/ui/components/submit-button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@workspace/ui/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@workspace/ui/components/select';
 
-import { AddressFields } from './address-fields';
-import { PartnerFields } from './partner-fields';
+import { ClientFormBody } from './client-form-body';
 import {
+  buildClientPayload,
   clientFormSchema,
+  clientToFormValues,
   DEFAULT_CLIENT_FORM,
-  EMPTY_ADDRESS,
   emptyPartner,
   formatDocument,
   formatPhone,
@@ -40,8 +39,6 @@ export type ClientDialogResult = {
   isExisting: boolean;
 };
 
-const sliceDate = (value: unknown): string => (value ? String(value).slice(0, 10) : '');
-
 export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?: ClientDialogResult) => void }) => {
   const { is_online, addClientToQueue } = useOfflineSyncContext();
 
@@ -51,10 +48,9 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
     mode: 'onSubmit',
   });
 
-  const partners = useFieldArray({ control: form.control, name: 'partners' });
-
   const [documentStatus, setDocumentStatus] = useState<DocumentStatus>('idle');
   const [existingClient, setExistingClient] = useState<Record<string, unknown> | null>(null);
+  const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const last_fetched_doc_ref = useRef<string>('');
@@ -68,17 +64,14 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
   const personType = form.watch('personType');
   const documentValue = form.watch('document');
 
+  const is_existing = documentStatus === 'found';
   const fields_disabled = documentStatus === 'idle' || documentStatus === 'loading';
-  const fields_read_only = documentStatus === 'found';
-  const all_disabled = fields_disabled || fields_read_only;
-
-  const resetFormState = (): void => {
-    form.reset(DEFAULT_CLIENT_FORM);
-    setDocumentStatus('idle');
-    setExistingClient(null);
-    last_fetched_doc_ref.current = '';
-    api_enrichment_ref.current = null;
-  };
+  // Document and person type identify the client — kept locked once a client is found.
+  const identity_locked = is_existing;
+  // Existing clients are read-only until the user opts into editing; address lookup
+  // is suppressed for them so a known CEP is never re-fetched.
+  const all_disabled = fields_disabled || (is_existing && !isEditingExisting);
+  const address_auto_fetch = !is_existing;
 
   /**
    * Switches person type clearing every field first. On auto-detection
@@ -90,37 +83,19 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
 
     form.reset({ ...DEFAULT_CLIENT_FORM, personType: next, document });
     setExistingClient(null);
+    setIsEditingExisting(false);
     api_enrichment_ref.current = null;
     last_fetched_doc_ref.current = '';
     setDocumentStatus(keep_document ? 'loading' : 'idle');
   };
 
   const populateFromClient = (client: Record<string, unknown>): void => {
-    const addr = (client.address as Record<string, string>) ?? {};
     const payload = (client.payload as Record<string, any>) ?? {};
-    const seededPartners = Array.isArray(client.partners) ? (client.partners as Record<string, any>[]) : [];
 
-    form.reset({
-      personType: (client.person_type as 'pf' | 'pj') ?? 'pf',
-      document: formatDocument(String(client.document ?? '')),
-      name: String(client.name ?? ''),
-      tradeName: String(client.trade_name ?? ''),
-      email: String(client.email ?? ''),
-      phone: String(client.phone ?? ''),
-      phoneSecondary: String(client.phone_secondary ?? ''),
-      birthDate: sliceDate(client.birth_date),
-      foundingDate: sliceDate(client.founding_date),
-      maritalStatus: String(client.marital_status ?? ''),
-      municipalRegistration: String(payload.inscricoes?.municipal ?? ''),
-      stateRegistration: String(payload.inscricoes?.estadual ?? ''),
-      address: { ...EMPTY_ADDRESS, ...addr },
-      partners: seededPartners.map(partner => ({
-        ...emptyPartner(),
-        ...partner,
-        document: formatDocument(String(partner.document ?? '')),
-        address: { ...EMPTY_ADDRESS, ...(partner.address ?? {}) },
-      })),
-    });
+    // Preserve API enrichment so editing the client does not drop payload.cnpj.
+    api_enrichment_ref.current = (payload.cnpj as Record<string, unknown>) ?? null;
+
+    form.reset(clientToFormValues(client));
   };
 
   const applyCompany = (company: BrasilApiCompany): void => {
@@ -163,6 +138,7 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
       if (last_fetched_doc_ref.current) {
         setDocumentStatus('idle');
         setExistingClient(null);
+        setIsEditingExisting(false);
         last_fetched_doc_ref.current = '';
       }
 
@@ -274,57 +250,40 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
 
   // ─── Submit ─────────────────────────────────────────────────────────────────
 
-  const buildPayload = (values: ClientFormValues): Record<string, unknown> => {
-    const extras: Record<string, unknown> = {};
-
-    if (api_enrichment_ref.current) {
-      extras.cnpj = api_enrichment_ref.current;
-    }
-
-    const municipal = values.municipalRegistration?.trim();
-    const estadual = values.stateRegistration?.trim();
-
-    if (municipal || estadual) {
-      extras.inscricoes = {
-        ...(municipal ? { municipal } : {}),
-        ...(estadual ? { estadual } : {}),
-      };
-    }
-
-    const base: Record<string, unknown> = {
-      person_type: values.personType,
-      name: values.name,
-      document: onlyNumbers(values.document),
-      email: values.email,
-      phone: values.phone,
-      phone_secondary: values.phoneSecondary || undefined,
-      address: { ...values.address, zipCode: onlyNumbers(values.address.zipCode) },
-      client_created_at: new Date().toISOString(),
-    };
-
-    if (Object.keys(extras).length > 0) {
-      base.payload = extras;
-    }
-
-    if (values.personType === 'pf') {
-      return { ...base, birth_date: values.birthDate, marital_status: values.maritalStatus };
-    }
-
-    return {
-      ...base,
-      trade_name: values.tradeName || undefined,
-      founding_date: values.foundingDate,
-      partners: values.partners.map(partner => ({
-        ...partner,
-        document: onlyNumbers(partner.document),
-        address: { ...partner.address, zipCode: onlyNumbers(partner.address.zipCode) },
-      })),
-    };
-  };
+  const buildPayload = (values: ClientFormValues): Record<string, unknown> => ({
+    ...buildClientPayload(values, { enrichment: api_enrichment_ref.current }),
+    client_created_at: new Date().toISOString(),
+  });
 
   const handleValid = async (values: ClientFormValues): Promise<void> => {
-    if (documentStatus === 'found' && existingClient) {
+    // Existing client, not editing: just select it as-is.
+    if (is_existing && existingClient && !isEditingExisting) {
       onSubmit({ id: String(existingClient.id), name: String(existingClient.name), isExisting: true });
+      return;
+    }
+
+    // Existing client, editing: persist the changed fields.
+    if (is_existing && existingClient) {
+      setIsSubmitting(true);
+
+      try {
+        const id = String(existingClient.id);
+        const result = await updateClient(id, buildPayload(values));
+
+        if (result?.status !== 200) {
+          toast.error(result?.message ?? 'Ocorreu um erro ao atualizar o cliente.');
+          return;
+        }
+
+        toast.success('Cliente atualizado com sucesso.');
+        document.dispatchEvent(new Event('clients:updated'));
+        onSubmit({ id, name: values.name, isExisting: true });
+      } catch {
+        toast.error('Ops! Ocorreu um erro ao processar sua requisição.');
+      } finally {
+        setIsSubmitting(false);
+      }
+
       return;
     }
 
@@ -369,7 +328,6 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
   const digits = onlyNumbers(documentValue);
   const documentLabel = digits.length < 11 ? 'CPF ou CNPJ' : personType === 'pj' ? 'CNPJ' : 'CPF';
   const documentPlaceholder = personType === 'pj' ? '00.000.000/0000-00' : '000.000.000-00';
-  const partnersError = (form.formState.errors.partners as { message?: string } | undefined)?.message;
 
   return (
     <Form {...form}>
@@ -385,10 +343,28 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
           </div>
         )}
 
-        {documentStatus === 'found' && (
+        {is_existing && (
           <Alert className="mt-4 border-blue-200 bg-blue-50 text-blue-800">
             <UserCheck className="h-4 w-4" />
-            <AlertDescription>Cliente já cadastrado.</AlertDescription>
+            <AlertDescription className="flex items-center justify-between gap-3">
+              <span>
+                {isEditingExisting
+                  ? 'Editando um cliente já cadastrado. Altere os campos desejados e salve.'
+                  : 'Cliente já cadastrado.'}
+              </span>
+              {!isEditingExisting && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => setIsEditingExisting(true)}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" />
+                  Editar dados
+                </Button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -423,7 +399,7 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
                 <Select
                   value={(field.value as string) ?? 'pf'}
                   onValueChange={value => switchPersonType(value as 'pf' | 'pj', false)}
-                  disabled={fields_read_only}
+                  disabled={identity_locked}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full sm:max-w-xs">
@@ -455,7 +431,7 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
                       placeholder={documentPlaceholder}
                       inputMode="numeric"
                       autoFocus
-                      disabled={fields_read_only}
+                      disabled={identity_locked}
                     />
                     {documentStatus === 'loading' && (
                       <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
@@ -468,224 +444,8 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
           />
         </div>
 
-        <fieldset disabled={all_disabled} className="mt-4 space-y-4 border-0 p-0 disabled:opacity-70">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{personType === 'pj' ? 'Razão Social' : 'Nome Completo'} *</FormLabel>
-                <FormControl>
-                  <Input {...field} value={(field.value as string) ?? ''} placeholder="Ex: João da Silva" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {personType === 'pj' && (
-            <FormField
-              control={form.control}
-              name="tradeName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome Fantasia</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={(field.value as string) ?? ''} placeholder="Ex: Loja Central" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          <div className={`grid grid-cols-2 gap-4 ${personType === 'pj' ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}>
-            <FormField
-              control={form.control}
-              name="phoneSecondary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>WhatsApp {personType === 'pf' ? '*' : ''}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={(field.value as string) ?? ''}
-                      onChange={e => field.onChange(formatPhone(e.target.value))}
-                      placeholder="(00) 00000-0000"
-                      aria-describedby={personType === 'pf' ? 'contact-requirement' : undefined}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone {personType === 'pf' ? '*' : ''}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={(field.value as string) ?? ''}
-                      onChange={e => field.onChange(formatPhone(e.target.value))}
-                      placeholder="(00) 00000-0000"
-                      aria-describedby={personType === 'pf' ? 'contact-requirement' : undefined}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>E-mail *</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="email" value={(field.value as string) ?? ''} placeholder="nome@email.com" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {personType === 'pf' && (
-              <FormField
-                control={form.control}
-                name="birthDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nascimento *</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="date" value={(field.value as string) ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </div>
-
-          {personType === 'pf' && (
-            <div
-              id="contact-requirement"
-              className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200"
-              role="alert"
-            >
-              <AlertCircle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <span>Informe <strong>WhatsApp</strong> ou <strong>Telefone</strong> — pelo menos um é obrigatório.</span>
-            </div>
-          )}
-
-          {personType === 'pf' && (
-            <FormField
-              control={form.control}
-              name="maritalStatus"
-              render={({ field }) => (
-                <FormItem className="sm:max-w-xs">
-                  <FormLabel>Estado civil *</FormLabel>
-                  <Select value={(field.value as string) ?? ''} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {MARITAL_STATUS_OPTIONS.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {personType === 'pj' && (
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="foundingDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de abertura *</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="date" value={(field.value as string) ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          <div>
-            <h4 className="mb-3 text-sm font-semibold text-foreground">Endereço</h4>
-            <AddressFields pathPrefix="address" disabled={all_disabled} online={is_online} />
-          </div>
-
-          {personType === 'pj' && (
-            <>
-              <div>
-                <h4 className="mb-3 text-sm font-semibold text-foreground">Inscrições</h4>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="municipalRegistration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Inscrição municipal</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={(field.value as string) ?? ''} placeholder="Opcional" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="stateRegistration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Inscrição estadual</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={(field.value as string) ?? ''} placeholder="Opcional" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-foreground">Sócios *</h4>
-                  <Button type="button" variant="outline" size="sm" onClick={() => partners.append(emptyPartner())}>
-                    <Plus className="mr-1 h-4 w-4" />
-                    Adicionar sócio
-                  </Button>
-                </div>
-
-                {partnersError && <p className="mb-2 text-sm text-destructive">{partnersError}</p>}
-
-                <div className="space-y-4">
-                  {partners.fields.map((item, index) => (
-                    <PartnerFields key={item.id} index={index} online={is_online} onRemove={() => partners.remove(index)} />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+        <fieldset disabled={all_disabled} className="mt-4 border-0 p-0 disabled:opacity-70">
+          <ClientFormBody online={is_online} addressAutoFetch={address_auto_fetch} />
         </fieldset>
 
         <DialogFooter className="mt-6 flex flex-row justify-between gap-2">
@@ -699,6 +459,10 @@ export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?:
                 <CloudOff size={14} className="mr-1.5" aria-hidden="true" />
                 Salvar localmente
               </>
+            ) : is_existing && isEditingExisting ? (
+              'Salvar alterações'
+            ) : is_existing ? (
+              'Selecionar cliente'
             ) : (
               'Salvar'
             )}

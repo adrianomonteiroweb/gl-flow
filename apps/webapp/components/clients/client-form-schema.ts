@@ -240,3 +240,87 @@ export const DEFAULT_CLIENT_FORM: ClientFormValues = {
 };
 
 export const MARITAL_STATUS_VALUE_SET = new Set<string>(MARITAL_STATUS_VALUES);
+
+// ─── Form value ⇄ API payload mapping ─────────────────────────────────────────
+
+const sliceDate = (value: unknown): string => (value ? String(value).slice(0, 10) : '');
+
+/** Maps a persisted client record into the form's value shape. */
+export const clientToFormValues = (client: Record<string, any>): ClientFormValues => {
+  const addr = (client.address as Record<string, string>) ?? {};
+  const payload = (client.payload as Record<string, any>) ?? {};
+  const seededPartners = Array.isArray(client.partners) ? (client.partners as Record<string, any>[]) : [];
+
+  return {
+    personType: (client.person_type as 'pf' | 'pj') ?? 'pf',
+    document: formatDocument(String(client.document ?? '')),
+    name: String(client.name ?? ''),
+    tradeName: String(client.trade_name ?? ''),
+    email: String(client.email ?? ''),
+    phone: String(client.phone ?? ''),
+    phoneSecondary: String(client.phone_secondary ?? ''),
+    birthDate: sliceDate(client.birth_date),
+    foundingDate: sliceDate(client.founding_date),
+    maritalStatus: String(client.marital_status ?? ''),
+    municipalRegistration: String(payload.inscricoes?.municipal ?? ''),
+    stateRegistration: String(payload.inscricoes?.estadual ?? ''),
+    address: { ...EMPTY_ADDRESS, ...addr },
+    partners: seededPartners.map(partner => ({
+      ...emptyPartner(),
+      ...partner,
+      document: formatDocument(String(partner.document ?? '')),
+      address: { ...EMPTY_ADDRESS, ...(partner.address ?? {}) },
+    })),
+  };
+};
+
+/** Maps the form's values into the API payload shape (digits only, jsonb extras). */
+export const buildClientPayload = (
+  values: ClientFormValues,
+  options: { enrichment?: Record<string, unknown> | null } = {}
+): Record<string, unknown> => {
+  const extras: Record<string, unknown> = {};
+
+  if (options.enrichment) {
+    extras.cnpj = options.enrichment;
+  }
+
+  const municipal = values.municipalRegistration?.trim();
+  const estadual = values.stateRegistration?.trim();
+
+  if (municipal || estadual) {
+    extras.inscricoes = {
+      ...(municipal ? { municipal } : {}),
+      ...(estadual ? { estadual } : {}),
+    };
+  }
+
+  const base: Record<string, unknown> = {
+    person_type: values.personType,
+    name: values.name,
+    document: onlyNumbers(values.document),
+    email: values.email,
+    phone: values.phone,
+    phone_secondary: values.phoneSecondary || undefined,
+    address: { ...values.address, zipCode: onlyNumbers(values.address.zipCode) },
+  };
+
+  if (Object.keys(extras).length > 0) {
+    base.payload = extras;
+  }
+
+  if (values.personType === 'pf') {
+    return { ...base, birth_date: values.birthDate, marital_status: values.maritalStatus };
+  }
+
+  return {
+    ...base,
+    trade_name: values.tradeName || undefined,
+    founding_date: values.foundingDate,
+    partners: values.partners.map(partner => ({
+      ...partner,
+      document: onlyNumbers(partner.document),
+      address: { ...partner.address, zipCode: onlyNumbers(partner.address.zipCode) },
+    })),
+  };
+};

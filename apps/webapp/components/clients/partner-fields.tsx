@@ -22,10 +22,11 @@ import { formatCpfInput, formatPhone, type ClientFormValues } from './client-for
 type PartnerFieldsProps = {
   index: number;
   online?: boolean;
+  autoFetch?: boolean;
   onRemove: () => void;
 };
 
-export const PartnerFields = ({ index, online = true, onRemove }: PartnerFieldsProps) => {
+export const PartnerFields = ({ index, online = true, autoFetch = true, onRemove }: PartnerFieldsProps) => {
   const form = useFormContext<ClientFormValues>();
   const base = `partners.${index}`;
   const fieldName = (suffix: string): FieldPath<ClientFormValues> => `${base}.${suffix}` as FieldPath<ClientFormValues>;
@@ -173,7 +174,7 @@ export const PartnerFields = ({ index, online = true, onRemove }: PartnerFieldsP
         )}
       />
 
-      <AddressFields pathPrefix={`${base}.address`} online={online} />
+      <AddressFields pathPrefix={`${base}.address`} online={online} autoFetch={autoFetch} />
     </div>
   );
 };

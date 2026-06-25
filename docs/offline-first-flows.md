@@ -17,7 +17,7 @@ Quando implementado, o fluxo salva dados localmente (localStorage) e sincroniza 
 
 ### Negociações
 
-- [ ] Criar negociação
+- [x] Criar negociação
 - [ ] Atualizar etapa / status de negociação
 
 ### Atividades

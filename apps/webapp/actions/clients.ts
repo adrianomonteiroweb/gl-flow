@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 
 import { ClientRepository, PipelineRepository, StepRepository, StatusRepository, NegotiationRepository } from '@workspace/db';
 import { onlyNumbers, isCpf } from '@workspace/utils/text';
@@ -620,6 +621,104 @@ export async function createClient(data: unknown) {
     }
 
     return { status: 500, message: 'Ocorreu um erro inesperado. Tente novamente.' };
+  }
+}
+
+const CreateNegotiationSchema = z.object({
+  client_id: z.string().min(1, 'ID do cliente é obrigatório'),
+});
+
+export async function createNegotiationForClient(data: unknown) {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { success: false, message: 'Usuário não autenticado' };
+    }
+
+    const workspaceId = await resolveWorkspaceId(me);
+
+    if (!workspaceId) {
+      return { success: false, message: 'Workspace não encontrado.' };
+    }
+
+    const parsed = CreateNegotiationSchema.safeParse(data);
+
+    if (!parsed.success) {
+      return { success: false, message: parsed.error.errors[0]?.message ?? 'Dados inválidos' };
+    }
+
+    const client = await ClientRepository.findById(parsed.data.client_id);
+
+    if (!client || client.workspace_id !== workspaceId) {
+      return { success: false, message: 'Cliente não encontrado.' };
+    }
+
+    const pipeline = await PipelineRepository.findDefaultByWorkspace(workspaceId);
+
+    if (!pipeline) {
+      return { success: false, message: 'Pipeline padrão não encontrado.' };
+    }
+
+    const step = await StepRepository.findBySlug(workspaceId, 'prospeccao');
+
+    if (!step) {
+      return { success: false, message: 'Etapa Prospecção não encontrada.' };
+    }
+
+    const status = await StatusRepository.findBySlug(workspaceId, 'novo');
+
+    if (!status) {
+      return { success: false, message: 'Status Novo não encontrado.' };
+    }
+
+    const lead = await LeadRepository.create({
+      workspace_id: workspaceId,
+      name: client.name,
+      email: client.email ?? null,
+      phone: client.phone ?? null,
+      pipeline_id: pipeline.id,
+      step_id: step.id,
+      status_id: status.id,
+      assignee_id: me.id,
+      sort_order: 0,
+    });
+
+    const existingNegotiations = await NegotiationRepository.findByClient(workspaceId, client.id);
+    const hasOpenInPipeline = existingNegotiations.some(
+      (n: any) => n.pipeline_id === pipeline.id && !n.won_at && !n.lost_at
+    );
+
+    if (!hasOpenInPipeline) {
+      await NegotiationRepository.create({
+        workspace_id: workspaceId,
+        client_id: client.id,
+        branch_id: client.branch_id ?? null,
+        title: client.name,
+        pipeline_id: pipeline.id,
+        step_id: step.id,
+        status_id: status.id,
+        assignee_id: me.id,
+        sort_order: 0,
+      });
+    }
+
+    LeadActivityLogger.log({
+      workspace_id: workspaceId,
+      lead_id: lead.id,
+      type: 'lead_created',
+      actor_type: 'user',
+      actor_id: me.id,
+      actor_name: me.name,
+      metadata: { origin: 'manual_negotiation', client_id: client.id },
+    });
+
+    revalidatePath('/pipelines', 'layout');
+
+    return { success: true, data: lead };
+  } catch (error: unknown) {
+    console.error('Erro ao criar negociação:', error);
+    return { success: false, message: 'Ocorreu um erro inesperado. Tente novamente.' };
   }
 }
 

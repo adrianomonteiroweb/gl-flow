@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Users, ListFilter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, ListFilter, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 
 import { Button } from '@workspace/ui/components/button';
 import { Toggle } from '@workspace/ui/components/toggle';
@@ -22,6 +22,7 @@ import { DistributeDialog } from '@/components/clients/distribute-dialog';
 
 import { LeadsDataTable } from './datatable/data-table';
 import { KanbanBoard } from './kanban/board';
+import { NewNegotiationDialog } from './new-negotiation-dialog';
 import { ViewToggle, ViewType } from './view-toggle';
 import { LeadsFilterBar } from './leads-filter-bar';
 
@@ -277,6 +278,17 @@ export function LeadsContainer() {
               </SelectContent>
             </Select>
           )}
+
+          <NewNegotiationDialog
+            onCreated={fetchKanbanData}
+            trigger={
+              <Button type="button" className="gap-2">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Nova Negociação</span>
+                <span className="sm:hidden">Nova</span>
+              </Button>
+            }
+          />
 
           {canDistribute && (
             <DistributeDialog

@@ -5,11 +5,12 @@ import type * as React from 'react';
 import { toast } from 'sonner';
 
 import { createClient } from '@/actions/clients';
+import type { PartnerData } from '@/repositories/types';
 
 const STORAGE_KEY = 'lf_offline_queue_clients';
 const MAX_ATTEMPTS = 3;
 
-type ClientPayload = {
+export type ClientPayload = {
   person_type: 'pf' | 'pj';
   name: string;
   trade_name?: string;
@@ -18,6 +19,8 @@ type ClientPayload = {
   phone?: string;
   phone_secondary?: string;
   birth_date?: string;
+  founding_date?: string;
+  marital_status?: string;
   address?: {
     zipCode?: string;
     street?: string;
@@ -27,6 +30,8 @@ type ClientPayload = {
     city?: string;
     state?: string;
   };
+  partners?: PartnerData[];
+  payload?: Record<string, unknown>;
   client_created_at?: string;
 };
 

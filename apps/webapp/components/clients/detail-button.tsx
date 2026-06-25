@@ -3,16 +3,32 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@workspace/ui/components/dialog';
 import { Button } from '@workspace/ui/components/button';
+import { Badge } from '@workspace/ui/components/badge';
 import { Separator } from '@workspace/ui/components/separator';
 import { Avatar, AvatarFallback } from '@workspace/ui/components/avatar';
 import { EyeIcon, User, Mail, Phone } from 'lucide-react';
 import { cn } from '@workspace/ui/lib/utils';
 import { DateFormatter } from '@workspace/utils';
+import { cpfOrCnpj } from '@workspace/utils/text';
 import { LeadInfoField } from '@/components/leads/lead-info-field';
 import { LeadAddressSection } from '@/components/leads/lead-address-section';
 import { LeadDetailedInfo } from '@/components/leads/lead-detailed-info';
-import { AddressData } from '@/repositories/types';
+import { AddressData, PartnerData } from '@/repositories/types';
+import { maritalStatusLabel } from '@/lib/clients/marital-status';
 import { getToneClasses } from '@/lib/tone-colors';
+
+const InfoRow = ({ label, value }: { label: string; value?: string | null }) => {
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground">{value}</p>
+    </div>
+  );
+};
 
 export function DetailClientButton({ client }: any) {
   const [open, setOpen] = useState(false);
@@ -48,6 +64,10 @@ export function DetailClientButton({ client }: any) {
     .toUpperCase()
     .slice(0, 2);
 
+  const isCompany = clientData?.person_type === 'pj';
+  const inscricoes = (clientData?.payload as { inscricoes?: { municipal?: string; estadual?: string } } | undefined)?.inscricoes;
+  const partnersList = (Array.isArray(clientData?.partners) ? clientData.partners : []) as PartnerData[];
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -68,13 +88,36 @@ export function DetailClientButton({ client }: any) {
             </Avatar>
             <div>
               <h3 className="text-lg font-semibold">{leadName}</h3>
-              <span
-                className={cn(
-                  'px-2 py-0.5 rounded-full text-xs font-medium',
-                  clientData?.deleted_at ? getToneClasses('neutral').soft : getToneClasses('success').soft
-                )}>
-                {clientData?.deleted_at ? 'Inativo' : 'Ativo'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    'px-2 py-0.5 rounded-full text-xs font-medium',
+                    clientData?.deleted_at ? getToneClasses('neutral').soft : getToneClasses('success').soft
+                  )}>
+                  {clientData?.deleted_at ? 'Inativo' : 'Ativo'}
+                </span>
+                <Badge variant="secondary" className={getToneClasses('info').soft}>
+                  {isCompany ? 'Pessoa Jurídica' : 'Pessoa Física'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <h4 className="text-sm font-semibold text-foreground mb-3">Dados cadastrais</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <InfoRow label={isCompany ? 'CNPJ' : 'CPF'} value={clientData?.document ? cpfOrCnpj(String(clientData.document)) : null} />
+              {isCompany && <InfoRow label="Nome Fantasia" value={clientData?.trade_name} />}
+              {isCompany ? (
+                <InfoRow label="Data de abertura" value={clientData?.founding_date ? DateFormatter.date(clientData.founding_date) : null} />
+              ) : (
+                <InfoRow label="Nascimento" value={clientData?.birth_date ? DateFormatter.date(clientData.birth_date) : null} />
+              )}
+              {!isCompany && <InfoRow label="Estado civil" value={clientData?.marital_status ? maritalStatusLabel(clientData.marital_status) : null} />}
+              {isCompany && <InfoRow label="Inscrição municipal" value={inscricoes?.municipal} />}
+              {isCompany && <InfoRow label="Inscrição estadual" value={inscricoes?.estadual} />}
             </div>
           </div>
 
@@ -119,6 +162,31 @@ export function DetailClientButton({ client }: any) {
             address={clientData?.address as AddressData | null}
             onAddressSuccess={handleAddressFieldSuccess}
           />
+
+          {isCompany && partnersList.length > 0 && (
+            <>
+              <Separator />
+
+              <div>
+                <h4 className="text-sm font-semibold text-foreground mb-3">Sócios</h4>
+                <div className="space-y-3">
+                  {partnersList.map((partner, index) => (
+                    <div key={`${partner.document}-${index}`} className="rounded-lg border border-border bg-muted/30 p-3">
+                      <p className="text-sm font-medium text-foreground">{partner.name || `Sócio ${index + 1}`}</p>
+                      <div className="mt-2 grid grid-cols-2 gap-3">
+                        <InfoRow label="CPF" value={partner.document ? cpfOrCnpj(String(partner.document)) : null} />
+                        <InfoRow label="Telefone" value={partner.phone} />
+                        <InfoRow label="E-mail" value={partner.email} />
+                        <InfoRow label="Nascimento" value={partner.birth_date ? DateFormatter.date(partner.birth_date) : null} />
+                        <InfoRow label="Estado civil" value={partner.marital_status ? maritalStatusLabel(partner.marital_status) : null} />
+                        <InfoRow label="Possui CNH" value={partner.has_cnh ? 'Sim' : 'Não'} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 

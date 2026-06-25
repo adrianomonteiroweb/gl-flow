@@ -12,3 +12,14 @@ export type AddressData = {
   city?: string;
   state?: string;
 };
+
+export type PartnerData = {
+  document: string;
+  name: string;
+  birth_date: string;
+  phone: string;
+  email: string;
+  marital_status: string;
+  has_cnh: boolean;
+  address: AddressData;
+};

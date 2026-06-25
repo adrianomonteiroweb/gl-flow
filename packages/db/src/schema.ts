@@ -386,8 +386,13 @@ export const clients_table = schema.table(
     email: varchar('email', { length: 255 }),
     phone: varchar('phone', { length: 50 }),
     phone_secondary: varchar('phone_secondary', { length: 50 }),
+    // birth_date = nascimento (PF) | founding_date = data de abertura (PJ).
     birth_date: timestamp('birth_date', { withTimezone: true, mode: 'string' }),
+    founding_date: timestamp('founding_date', { withTimezone: true, mode: 'string' }),
+    marital_status: varchar('marital_status', { length: 30 }),
     address: jsonb('address'),
+    // partners = quadro de sócios (PJ) — array estruturado de pessoas físicas.
+    partners: jsonb('partners'),
 
     status: varchar('status', { length: 50 }).default('active').notNull(),
     // Capture timestamp on the device when created offline (created_at = server receipt).

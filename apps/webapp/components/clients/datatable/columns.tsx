@@ -15,6 +15,15 @@ export const columns: any = [
     header: 'Nome',
   },
   {
+    accessorKey: 'person_type',
+    header: 'Tipo',
+    cell: ({ row }: any) => (
+      <Badge variant="secondary" className={getToneClasses('info').soft}>
+        {row.original.person_type === 'pj' ? 'PJ' : 'PF'}
+      </Badge>
+    ),
+  },
+  {
     accessorKey: 'email',
     header: 'E-mail',
     cell: ({ row }: any) => row.original.email || '—',

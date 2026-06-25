@@ -3,46 +3,68 @@
 import { z } from 'zod';
 
 import { ClientRepository, PipelineRepository, StepRepository, StatusRepository } from '@workspace/db';
-import { onlyNumbers } from '@workspace/utils/text';
+import { onlyNumbers, isCpf } from '@workspace/utils/text';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
 import { isLeadScopeRestricted, canAccessSettings, canAssignLeads } from '@/lib/auth/permissions';
 import { LeadActivityLogger } from '@/lib/activities/lead-activity-logger';
 import { resolveWorkspaceId } from '@/lib/workspaces/development-workspace';
 import { getStepLabel, getStatusLabel } from '@/utils/status-utils';
 import { fetchCompanyByCnpj, type BrasilApiCompany } from '@/lib/brasilapi';
+import { MARITAL_STATUS_VALUES } from '@/lib/clients/marital-status';
 
 import { getMe } from './users';
 
 const PHONE_REGEX = /^\+?[\d\s\-().]{7,20}$/;
+const MaritalStatusEnum = z.enum(MARITAL_STATUS_VALUES);
 
 const AddressSchema = z.object({
-  zipCode: z.string().optional(),
-  street: z.string().optional(),
-  number: z.string().optional(),
-  complement: z.string().optional(),
-  neighborhood: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().max(2, 'Estado deve ter 2 letras').optional(),
+  zipCode: z.string().min(8, 'CEP é obrigatório'),
+  street: z.string().min(1, 'Endereço é obrigatório'),
+  number: z.string().min(1, 'Número é obrigatório'),
+  complement: z.string().min(1, 'Complemento é obrigatório'),
+  neighborhood: z.string().min(1, 'Bairro é obrigatório'),
+  city: z.string().min(1, 'Cidade é obrigatória'),
+  state: z.string().length(2, 'Estado deve ter 2 letras'),
 });
 
-const CreateClientSchema = z
-  .object({
-    id: z.string().uuid().optional(),
-    person_type: z.enum(['pf', 'pj']).default('pf'),
-    name: z.string().min(1, 'Nome é obrigatório'),
+const PartnerSchema = z.object({
+  document: z.string().refine(value => isCpf(onlyNumbers(value)), 'CPF do sócio inválido'),
+  name: z.string().min(1, 'Nome do sócio é obrigatório'),
+  birth_date: z.string().min(1, 'Data de nascimento do sócio é obrigatória'),
+  phone: z.string().regex(PHONE_REGEX, 'Telefone do sócio inválido'),
+  email: z.string().email('E-mail do sócio inválido'),
+  marital_status: MaritalStatusEnum,
+  has_cnh: z.boolean(),
+  address: AddressSchema,
+});
+
+const BaseClientFields = {
+  id: z.string().uuid().optional(),
+  document: z.string().min(11, 'Documento é obrigatório'),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  email: z.string().email('E-mail inválido'),
+  phone: z.string().regex(PHONE_REGEX, 'Telefone inválido'),
+  phone_secondary: z.string().regex(PHONE_REGEX, 'WhatsApp inválido').optional().or(z.literal('')),
+  address: AddressSchema,
+  payload: z.any().optional(),
+  client_created_at: z.string().optional(),
+};
+
+const CreateClientSchema = z.discriminatedUnion('person_type', [
+  z.object({
+    person_type: z.literal('pf'),
+    ...BaseClientFields,
+    birth_date: z.string().min(1, 'Data de nascimento é obrigatória'),
+    marital_status: MaritalStatusEnum,
+  }),
+  z.object({
+    person_type: z.literal('pj'),
+    ...BaseClientFields,
     trade_name: z.string().optional().or(z.literal('')),
-    document: z.string().optional().or(z.literal('')),
-    email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-    phone: z.string().regex(PHONE_REGEX, 'Telefone inválido').optional().or(z.literal('')),
-    phone_secondary: z.string().regex(PHONE_REGEX, 'WhatsApp inválido').optional().or(z.literal('')),
-    birth_date: z.string().optional().or(z.literal('')),
-    address: AddressSchema.optional(),
-    client_created_at: z.string().optional(),
-  })
-  .refine(d => !!(d.phone || d.phone_secondary), {
-    message: 'Informe ao menos um telefone ou WhatsApp.',
-    path: ['phone'],
-  });
+    founding_date: z.string().min(1, 'Data de abertura é obrigatória'),
+    partners: z.array(PartnerSchema).min(1, 'Informe ao menos um sócio'),
+  }),
+]);
 
 const UpdateClientSchema = z.object({
   person_type: z.enum(['pf', 'pj']).optional(),
@@ -53,7 +75,11 @@ const UpdateClientSchema = z.object({
   phone: z.string().regex(PHONE_REGEX, 'Telefone inválido').optional().or(z.literal('')),
   phone_secondary: z.string().regex(PHONE_REGEX, 'WhatsApp inválido').optional().or(z.literal('')),
   birth_date: z.string().optional().or(z.literal('')),
-  address: AddressSchema.optional(),
+  founding_date: z.string().optional().or(z.literal('')),
+  marital_status: z.string().optional().or(z.literal('')),
+  partners: z.array(PartnerSchema).optional(),
+  address: AddressSchema.partial().optional(),
+  payload: z.any().optional(),
 });
 
 // ─── Document / Company lookups ──────────────────────────────────────────────
@@ -116,6 +142,10 @@ export const lookupCompanyByCnpj = async (cnpj: string) => {
       fetchCompanyByCnpj(digits),
     ]);
 
+    if (!existingClient && !company) {
+      console.warn(`CNPJ não encontrado: ${digits}`);
+    }
+
     return {
       status: 200,
       existingClient: existingClient ?? undefined,
@@ -124,6 +154,45 @@ export const lookupCompanyByCnpj = async (cnpj: string) => {
   } catch (error: unknown) {
     console.error('Erro ao buscar empresa por CNPJ:', error);
     return { status: 500, message: 'Erro ao buscar dados da empresa.' };
+  }
+};
+
+/**
+ * Lookup de pessoa física por CPF. A API externa de dados por CPF ainda não foi
+ * implementada, então hoje só consulta a base local (igual ao lookupClientByDocument).
+ * Quando a API existir, espelhar o fluxo de lookupCompanyByCnpj: retornar também
+ * `person` (campos obrigatórios) e `enrichment` (não obrigatórios → payload.cpf).
+ */
+export const lookupPersonByCpf = async (cpf: string) => {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { status: 401, message: 'Usuário não autenticado' };
+    }
+
+    const workspaceId = await resolveWorkspaceId(me);
+
+    if (!workspaceId) {
+      return { status: 400, message: 'Workspace não encontrado.' };
+    }
+
+    const digits = onlyNumbers(cpf);
+
+    if (digits.length !== 11) {
+      return { status: 400, message: 'CPF deve ter 11 dígitos.' };
+    }
+
+    const existingClient = await ClientRepository.findByDocument(workspaceId, digits);
+
+    return {
+      status: 200,
+      existingClient: existingClient ?? undefined,
+      person: undefined,
+    };
+  } catch (error: unknown) {
+    console.error('Erro ao buscar pessoa por CPF:', error);
+    return { status: 500, message: 'Erro ao buscar dados da pessoa.' };
   }
 };
 
@@ -416,51 +485,51 @@ export async function createClient(data: unknown) {
       return { status: 400, message };
     }
 
-    const { address, id, ...rest } = parsed.data;
-    const hasAddress = address && Object.values(address).some(v => v);
-    const cleanDocument = rest.document ? onlyNumbers(rest.document) : undefined;
+    const input = parsed.data;
+    const cleanDocument = onlyNumbers(input.document);
 
     const clientData: Record<string, unknown> = {
       workspace_id: workspaceId,
       assignee_id: me.id,
-      person_type: rest.person_type,
-      name: rest.name,
+      person_type: input.person_type,
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      address: input.address,
     };
 
-    if (id) {
-      clientData.id = id;
-    }
-
-    if (rest.trade_name) {
-      clientData.trade_name = rest.trade_name;
+    if (input.id) {
+      clientData.id = input.id;
     }
 
     if (cleanDocument) {
       clientData.document = cleanDocument;
     }
 
-    if (rest.email) {
-      clientData.email = rest.email;
+    if (input.phone_secondary) {
+      clientData.phone_secondary = input.phone_secondary;
     }
 
-    if (rest.phone) {
-      clientData.phone = rest.phone;
+    if (input.payload) {
+      clientData.payload = input.payload;
     }
 
-    if (rest.phone_secondary) {
-      clientData.phone_secondary = rest.phone_secondary;
+    if (input.client_created_at) {
+      clientData.client_created_at = input.client_created_at;
     }
 
-    if (rest.birth_date) {
-      clientData.birth_date = rest.birth_date;
+    if (input.person_type === 'pf') {
+      clientData.birth_date = input.birth_date;
+      clientData.marital_status = input.marital_status;
     }
 
-    if (hasAddress) {
-      clientData.address = address;
-    }
+    if (input.person_type === 'pj') {
+      if (input.trade_name) {
+        clientData.trade_name = input.trade_name;
+      }
 
-    if (rest.client_created_at) {
-      clientData.client_created_at = rest.client_created_at;
+      clientData.founding_date = input.founding_date;
+      clientData.partners = input.partners.map(partner => ({ ...partner, document: onlyNumbers(partner.document) }));
     }
 
     const created = await ClientRepository.createIdempotent(clientData);
@@ -472,7 +541,7 @@ export async function createClient(data: unknown) {
       actor_type: 'user',
       actor_id: me.id,
       actor_name: me.name,
-      metadata: { origin: 'manual', person_type: rest.person_type, entity: 'client' },
+      metadata: { origin: 'manual', person_type: input.person_type, entity: 'client' },
     });
 
     return { status: 200, data: created };
@@ -540,6 +609,22 @@ export async function updateClient(id: string, data: unknown) {
 
     if (rest.birth_date !== undefined) {
       updateData.birth_date = rest.birth_date || null;
+    }
+
+    if (rest.founding_date !== undefined) {
+      updateData.founding_date = rest.founding_date || null;
+    }
+
+    if (rest.marital_status !== undefined) {
+      updateData.marital_status = rest.marital_status || null;
+    }
+
+    if (rest.partners !== undefined) {
+      updateData.partners = rest.partners.map(partner => ({ ...partner, document: onlyNumbers(partner.document) }));
+    }
+
+    if (rest.payload !== undefined) {
+      updateData.payload = rest.payload;
     }
 
     if (address) {

@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { ClientRepository, PipelineRepository, StepRepository, StatusRepository } from '@workspace/db';
+import { ClientRepository, PipelineRepository, StepRepository, StatusRepository, NegotiationRepository } from '@workspace/db';
 import { onlyNumbers, isCpf } from '@workspace/utils/text';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
 import { isLeadScopeRestricted, canAccessSettings, canAssignLeads } from '@/lib/auth/permissions';
@@ -43,28 +43,41 @@ const BaseClientFields = {
   document: z.string().min(11, 'Documento é obrigatório'),
   name: z.string().min(1, 'Nome é obrigatório'),
   email: z.string().email('E-mail inválido'),
-  phone: z.string().regex(PHONE_REGEX, 'Telefone inválido'),
+  phone: z.string().regex(PHONE_REGEX, 'Telefone inválido').optional().or(z.literal('')),
   phone_secondary: z.string().regex(PHONE_REGEX, 'WhatsApp inválido').optional().or(z.literal('')),
   address: AddressSchema,
   payload: z.any().optional(),
   client_created_at: z.string().optional(),
 };
 
-const CreateClientSchema = z.discriminatedUnion('person_type', [
-  z.object({
-    person_type: z.literal('pf'),
-    ...BaseClientFields,
-    birth_date: z.string().min(1, 'Data de nascimento é obrigatória'),
-    marital_status: MaritalStatusEnum,
-  }),
-  z.object({
-    person_type: z.literal('pj'),
-    ...BaseClientFields,
-    trade_name: z.string().optional().or(z.literal('')),
-    founding_date: z.string().min(1, 'Data de abertura é obrigatória'),
-    partners: z.array(PartnerSchema).min(1, 'Informe ao menos um sócio'),
-  }),
-]);
+const CreateClientSchema = z
+  .discriminatedUnion('person_type', [
+    z.object({
+      person_type: z.literal('pf'),
+      ...BaseClientFields,
+      birth_date: z.string().min(1, 'Data de nascimento é obrigatória'),
+      marital_status: MaritalStatusEnum,
+    }),
+    z.object({
+      person_type: z.literal('pj'),
+      ...BaseClientFields,
+      trade_name: z.string().optional().or(z.literal('')),
+      founding_date: z.string().min(1, 'Data de abertura é obrigatória'),
+      partners: z.array(PartnerSchema).min(1, 'Informe ao menos um sócio'),
+    }),
+  ])
+  .superRefine((data, ctx) => {
+    if (data.person_type !== 'pf') {
+      return;
+    }
+
+    const hasPhone = !!data.phone && onlyNumbers(data.phone).length >= 10;
+    const hasWhatsApp = !!data.phone_secondary && onlyNumbers(data.phone_secondary).length >= 10;
+
+    if (!hasPhone && !hasWhatsApp) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['phone_secondary'], message: 'Informe WhatsApp ou telefone' });
+    }
+  });
 
 const UpdateClientSchema = z.object({
   person_type: z.enum(['pf', 'pj']).optional(),
@@ -464,6 +477,48 @@ export async function distributeClients(params: DistributeParams) {
   }
 }
 
+const createInitialNegotiation = async (
+  workspaceId: string,
+  clientId: string,
+  clientName: string,
+  branchId: string | null | undefined,
+  assigneeId: string | null | undefined
+) => {
+  const pipeline = await PipelineRepository.findAll().then(pipelines =>
+    pipelines.find(p => p.workspace_id === workspaceId && p.is_default && !p.deleted_at)
+  );
+
+  if (!pipeline) return;
+
+  const step = await StepRepository.findAll().then(steps =>
+    steps.find(
+      s => s.workspace_id === workspaceId && s.slug === 'prospeccao' && !s.deleted_at
+    )
+  );
+
+  if (!step) return;
+
+  const status = await StatusRepository.findAll().then(statuses =>
+    statuses.find(
+      s => s.workspace_id === workspaceId && s.slug === 'novo' && !s.deleted_at
+    )
+  );
+
+  if (!status) return;
+
+  await NegotiationRepository.create({
+    workspace_id: workspaceId,
+    client_id: clientId,
+    branch_id: branchId ?? null,
+    title: clientName,
+    pipeline_id: pipeline.id,
+    step_id: step.id,
+    status_id: status.id,
+    assignee_id: assigneeId ?? null,
+    sort_order: 0,
+  });
+};
+
 export async function createClient(data: unknown) {
   try {
     const me = await getMe();
@@ -494,7 +549,6 @@ export async function createClient(data: unknown) {
       person_type: input.person_type,
       name: input.name,
       email: input.email,
-      phone: input.phone,
       address: input.address,
     };
 
@@ -504,6 +558,12 @@ export async function createClient(data: unknown) {
 
     if (cleanDocument) {
       clientData.document = cleanDocument;
+    }
+
+    // Empty phone stays NULL so the partial unique index does not collide across
+    // clients that only provide WhatsApp.
+    if (input.phone) {
+      clientData.phone = input.phone;
     }
 
     if (input.phone_secondary) {
@@ -543,6 +603,8 @@ export async function createClient(data: unknown) {
       actor_name: me.name,
       metadata: { origin: 'manual', person_type: input.person_type, entity: 'client' },
     });
+
+    await createInitialNegotiation(workspaceId, created.id, created.name, created.branch_id, created.assignee_id);
 
     return { status: 200, data: created };
   } catch (error: unknown) {

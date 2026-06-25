@@ -4,10 +4,15 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 
 import { DndContext, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { MoveHorizontal } from 'lucide-react';
+import { Progress } from '@workspace/ui/components/progress';
+import { cn } from '@workspace/ui/lib/utils';
 import { getStepsWithStatuses } from '@/actions/steps';
 import { buildKanbanColumns, resolveLeadColumnId, type ClosedInfo, type KanbanColumn as KanbanColumnDef, type Stage } from '@/utils/kanban-columns';
 import type { LeadItem } from '@/components/leads/lead-card-content';
 import { LeadDetailsSurface } from '@/components/leads/lead-details-surface';
+import { useDragScroll } from '@/hooks/use-drag-scroll';
+import { useScrollProgress } from '@/hooks/use-scroll-progress';
 
 import { KanbanColumn } from './column';
 
@@ -87,6 +92,19 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
 
     return grouped;
   }, [leadsState, columns, closedInfo]);
+
+  const visibleColumns = useMemo(
+    () => (stepFilter?.length ? columns.filter(c => stepFilter.includes(c.id)) : columns),
+    [stepFilter, columns]
+  );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { isPanning, onPointerDown, onPointerMove, onPointerUp } = useDragScroll({ scrollRef });
+  const { progress, isOverflowing, onScroll, recompute } = useScrollProgress({ scrollRef });
+
+  useEffect(() => {
+    recompute();
+  }, [visibleColumns, leadsByColumn, recompute]);
 
   const applyMove = useCallback(
     (leadId: string, target: KanbanColumnDef) => {
@@ -189,11 +207,32 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
     );
   }
 
-  const visibleColumns = stepFilter?.length ? columns.filter(c => stepFilter.includes(c.id)) : columns;
-
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-      <div className="-mx-4 w-screen overflow-x-auto px-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:mx-0 md:w-full md:px-0 md:[scrollbar-width:thin] md:[&::-webkit-scrollbar]:h-2 md:[&::-webkit-scrollbar-thumb]:rounded-full md:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
+      {isOverflowing && (
+        <div className="-mx-4 mb-2 flex items-center gap-2 px-4 md:mx-0 md:px-0">
+          <MoveHorizontal className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" aria-hidden="true" />
+          <Progress
+            value={progress * 100}
+            aria-label="Progresso de rolagem das etapas do pipeline"
+            className="h-2 flex-1 bg-muted"
+          />
+        </div>
+      )}
+
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onPointerLeave={onPointerUp}
+        className={cn(
+          '-mx-4 w-screen overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:w-full md:px-0',
+          isOverflowing && 'md:cursor-grab',
+          isPanning && 'md:cursor-grabbing md:select-none'
+        )}>
         <div className="flex snap-x snap-mandatory gap-3 md:min-w-full md:snap-none md:gap-4">
           {visibleColumns.map(column => (
             <KanbanColumn

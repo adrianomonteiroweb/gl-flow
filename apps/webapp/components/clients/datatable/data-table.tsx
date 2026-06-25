@@ -56,7 +56,7 @@ export function ClientsDataTable() {
   return (
     <div className="space-y-4">
       <div className="hidden lg:flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Clientes</h2>
+        <h2 className="text-lg font-semibold text-foreground">Clientes</h2>
         <CreateClientButton />
       </div>
 

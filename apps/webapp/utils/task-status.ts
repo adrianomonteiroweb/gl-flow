@@ -1,3 +1,5 @@
+import { getToneClasses, type ToneName } from '@/lib/tone-colors';
+
 export type TaskStatus = 'future' | 'due-today' | 'overdue' | 'completed';
 
 export interface TaskLike {
@@ -72,6 +74,13 @@ export const getLeadTaskAlert = (tasks: TaskLike[]): LeadTaskAlert | null => {
 
 export type LeadTaskAlertIcon = 'chevron-left' | 'chevron-down' | 'chevron-right' | 'check';
 
+const ALERT_TONE: Record<LeadTaskAlert, ToneName> = {
+  overdue: 'danger',
+  near: 'warning',
+  pending: 'neutral',
+  done: 'success',
+};
+
 export const leadTaskAlertConfig: Record<
   LeadTaskAlert,
   {
@@ -82,26 +91,26 @@ export const leadTaskAlertConfig: Record<
   }
 > = {
   overdue: {
-    dotClass: 'bg-red-500',
-    circleClass: 'bg-red-100 text-red-700 border border-red-300',
+    dotClass: getToneClasses(ALERT_TONE.overdue).dot,
+    circleClass: getToneClasses(ALERT_TONE.overdue).soft,
     icon: 'chevron-left',
     label: 'Ver tarefas vencidas',
   },
   near: {
-    dotClass: 'bg-amber-500',
-    circleClass: 'bg-amber-100 text-amber-700 border border-amber-300',
+    dotClass: getToneClasses(ALERT_TONE.near).dot,
+    circleClass: getToneClasses(ALERT_TONE.near).soft,
     icon: 'chevron-down',
     label: 'Ver tarefas que vencem hoje',
   },
   pending: {
-    dotClass: 'bg-gray-400',
-    circleClass: 'bg-gray-100 text-gray-700 border border-gray-300',
+    dotClass: getToneClasses(ALERT_TONE.pending).dot,
+    circleClass: getToneClasses(ALERT_TONE.pending).soft,
     icon: 'chevron-right',
     label: 'Ver tarefas pendentes',
   },
   done: {
-    dotClass: 'bg-green-500',
-    circleClass: 'bg-emerald-100 text-emerald-700 border border-emerald-300',
+    dotClass: getToneClasses(ALERT_TONE.done).dot,
+    circleClass: getToneClasses(ALERT_TONE.done).soft,
     icon: 'check',
     label: 'Ver tarefas concluídas',
   },

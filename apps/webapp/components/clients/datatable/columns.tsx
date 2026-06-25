@@ -7,6 +7,7 @@ import { DetailClientButton } from '../detail-button';
 import { Badge } from '@workspace/ui/components/badge';
 import { useSessionContext } from '@/contexts/session';
 import { canAccessSettings } from '@/lib/auth/permissions';
+import { getToneClasses } from '@/lib/tone-colors';
 
 export const columns: any = [
   {
@@ -46,11 +47,11 @@ export const columns: any = [
       const isInactive = !!row.original.deleted_at;
 
       return isInactive ? (
-        <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+        <Badge variant="secondary" className={getToneClasses('neutral').soft}>
           Inativo
         </Badge>
       ) : (
-        <Badge variant="secondary" className="bg-green-100 text-green-700">
+        <Badge variant="secondary" className={getToneClasses('success').soft}>
           Ativo
         </Badge>
       );

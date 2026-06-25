@@ -33,25 +33,16 @@ import { DateFormatter } from '@workspace/utils';
 import { getLeadActivities, addLeadNote, type LeadActivity } from '@/actions/lead-activities';
 import { getStepLabel, getStatusLabel } from '@/utils/status-utils';
 import { getRoleLabel } from '@/lib/auth/permissions';
+import { getToneClasses, type ToneName } from '@/lib/tone-colors';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'muted';
-
-const toneStyles: Record<Tone, string> = {
-  primary: 'bg-primary/10 text-primary border-primary/20',
-  success: 'bg-green-50 text-green-600 border-green-200',
-  warning: 'bg-amber-50 text-amber-600 border-amber-200',
-  danger: 'bg-red-50 text-red-600 border-red-200',
-  muted: 'bg-muted text-muted-foreground border-border',
-};
-
-const ACTIVITY_CONFIG: Record<LeadActivity['type'], { icon: LucideIcon; label: string; tone: Tone }> = {
+const ACTIVITY_CONFIG: Record<LeadActivity['type'], { icon: LucideIcon; label: string; tone: ToneName }> = {
   lead_created: { icon: UserPlus, label: 'Lead criado', tone: 'primary' },
-  info_updated: { icon: Pencil, label: 'Informações atualizadas', tone: 'muted' },
-  address_updated: { icon: MapPin, label: 'Endereço atualizado', tone: 'muted' },
+  info_updated: { icon: Pencil, label: 'Informações atualizadas', tone: 'neutral' },
+  address_updated: { icon: MapPin, label: 'Endereço atualizado', tone: 'neutral' },
   loss_reason_set: { icon: XCircle, label: 'Motivo de perda definido', tone: 'danger' },
-  loss_reason_cleared: { icon: RotateCcw, label: 'Motivo de perda removido', tone: 'muted' },
+  loss_reason_cleared: { icon: RotateCcw, label: 'Motivo de perda removido', tone: 'neutral' },
   status_changed: { icon: RefreshCw, label: 'Status alterado', tone: 'primary' },
   step_changed: { icon: ListChecks, label: 'Etapa alterada', tone: 'primary' },
   assignee_changed: { icon: UserCog, label: 'Responsável alterado', tone: 'primary' },
@@ -60,13 +51,13 @@ const ACTIVITY_CONFIG: Record<LeadActivity['type'], { icon: LucideIcon; label: s
   lead_won: { icon: Trophy, label: 'Negociação ganha', tone: 'success' },
   lead_closed: { icon: Lock, label: 'Negociação perdida', tone: 'danger' },
   chat_won: { icon: Trophy, label: 'Negociação ganha', tone: 'success' },
-  chat_closed: { icon: Lock, label: 'Atendimento encerrado', tone: 'muted' },
+  chat_closed: { icon: Lock, label: 'Atendimento encerrado', tone: 'neutral' },
   task_created: { icon: ClipboardList, label: 'Tarefa criada', tone: 'primary' },
   task_completed: { icon: CheckCircle2, label: 'Tarefa concluída', tone: 'success' },
   task_reopened: { icon: RotateCcw, label: 'Tarefa reaberta', tone: 'warning' },
-  task_deleted: { icon: Trash2, label: 'Tarefa removida', tone: 'muted' },
+  task_deleted: { icon: Trash2, label: 'Tarefa removida', tone: 'neutral' },
   proposal_created: { icon: FileText, label: 'Proposta criada', tone: 'primary' },
-  note_added: { icon: MessageSquare, label: 'Nota', tone: 'muted' },
+  note_added: { icon: MessageSquare, label: 'Nota', tone: 'neutral' },
 };
 
 const ORIGIN_LABELS: Record<string, string> = {
@@ -166,7 +157,7 @@ const ActivityTimeline = ({ groups }: { groups: DayGroup[] }) => (
   <div className="space-y-5">
     {groups.map(group => (
       <div key={group.day} className="space-y-3">
-        <h4 className="sticky top-0 z-10 bg-white py-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-background">
+        <h4 className="sticky top-0 z-10 bg-card py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {group.day}
         </h4>
 
@@ -179,16 +170,16 @@ const ActivityTimeline = ({ groups }: { groups: DayGroup[] }) => (
             return (
               <li key={activity.id} className="relative flex items-start gap-3">
                 <span
-                  className={cn('relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border', toneStyles[config.tone])}>
+                  className={cn('relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full', getToneClasses(config.tone).soft)}>
                   <Icon className="h-4 w-4" />
                 </span>
 
                 <div className="min-w-0 flex-1 pt-1">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{renderTitle(activity)}</p>
+                  <p className="text-sm font-medium text-foreground">{renderTitle(activity)}</p>
                   {detail && (
                     <p
                       className={cn(
-                        'mt-0.5 break-words text-sm text-gray-600 dark:text-gray-300',
+                        'mt-0.5 break-words text-sm text-muted-foreground',
                         activity.type === 'note_added' && 'whitespace-pre-wrap'
                       )}>
                       {detail}
@@ -244,7 +235,7 @@ const NoteForm = ({ onNoteAdded, leadId }: { onNoteAdded: () => void; leadId: st
         className="resize-none text-sm"
         maxLength={1000}
       />
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="flex justify-end">
         <Button size="sm" onClick={handleAddNote} disabled={!note.trim() || submitting}>
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -299,7 +290,7 @@ export const LeadTimelineSection = ({ leadId }: LeadTimelineSectionProps) => {
       ) : (
         <>
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-gray-700">Histórico</h4>
+            <h4 className="text-sm font-semibold text-foreground">Histórico</h4>
 
             <Dialog>
               <DialogTrigger asChild>

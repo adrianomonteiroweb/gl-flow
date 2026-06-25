@@ -16,6 +16,7 @@ import { useLeadsSSE } from '@/hooks/use-leads-sse';
 import { useLeadsPreferences } from '@/hooks/use-leads-preferences';
 import { useSessionContext } from '@/contexts/session';
 import { canAssignLeads } from '@/lib/auth/permissions';
+import { getToneClasses } from '@/lib/tone-colors';
 import { LossReasonModal } from '@/components/loss-reasons/loss-reason-modal';
 import { DistributeDialog } from '@/components/clients/distribute-dialog';
 
@@ -257,7 +258,7 @@ export function LeadsContainer() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="hidden sm:block text-lg font-semibold text-gray-900">
+        <h2 className="hidden sm:block text-lg font-semibold text-foreground">
           {view === 'list' ? 'Visualização em Lista' : 'Visualização em Kanban'}
         </h2>
 
@@ -337,13 +338,15 @@ export function LeadsContainer() {
       )}
 
       {error && view === 'kanban' && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+        <div className={cn('flex items-center justify-between rounded-lg p-4', getToneClasses('danger').soft)}>
           <div className="flex items-center gap-3">
-            <div className="w-5 h-5 rounded-full bg-red-200 flex items-center justify-center text-red-600 text-sm">!</div>
-            <p className="text-sm text-red-700">{error}</p>
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-sm text-destructive-foreground">!</div>
+            <p className="text-sm">{error}</p>
           </div>
 
-          <button onClick={() => setError(null)} className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors">
+          <button
+            onClick={() => setError(null)}
+            className="rounded text-sm font-medium transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             Fechar
           </button>
         </div>

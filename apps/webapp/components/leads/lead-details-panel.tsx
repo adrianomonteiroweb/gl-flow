@@ -113,7 +113,7 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
     <div className={`${containerPadding} space-y-6`}>
       <div className="space-y-4">
         <Avatar className="h-24 w-24 mx-auto">
-          <AvatarFallback className="text-lg bg-primary text-white">{leadInitials}</AvatarFallback>
+          <AvatarFallback className="text-lg bg-primary text-primary-foreground">{leadInitials}</AvatarFallback>
         </Avatar>
         <div className="text-center">
           <h3 className="text-xl font-semibold">{leadName}</h3>
@@ -178,7 +178,7 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
                     <ClipboardCheck className="h-5 w-5" />
                     {taskAlert && (
                       <span
-                        className={cn('absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full ring-2 ring-white', leadTaskAlertConfig[taskAlert].dotClass)}
+                        className={cn('absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full ring-2 ring-background', leadTaskAlertConfig[taskAlert].dotClass)}
                       />
                     )}
                   </span>
@@ -193,7 +193,7 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
 
         <TabsContent value="about" className="space-y-6 mt-6">
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-4">Sobre</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-4">Sobre</h4>
             <div className="space-y-2">
               <LeadInfoField
                 leadId={leadData?.id}
@@ -269,7 +269,7 @@ export const LeadDetailsPanel = ({ lead, chatId }: LeadDetailsPanelProps) => {
   }
 
   return (
-    <div data-slot="lead-details-panel" className="w-80 border-l bg-white dark:bg-background flex flex-col h-full lead-details-panel">
+    <div data-slot="lead-details-panel" className="w-80 border-l bg-card flex flex-col h-full lead-details-panel">
       <Suspense>
         <LeadDetailsPanelInner lead={lead} chatId={chatId} />
       </Suspense>

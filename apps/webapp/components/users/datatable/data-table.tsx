@@ -42,7 +42,7 @@ export function UsersDataTable() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="hidden sm:block text-lg font-semibold text-gray-900">Usuários</h2>
+        <h2 className="hidden sm:block text-lg font-semibold text-foreground">Usuários</h2>
         <div className="ml-auto">
           <CreateUserButton />
         </div>

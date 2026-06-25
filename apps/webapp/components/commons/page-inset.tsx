@@ -8,7 +8,7 @@ export function PageInset({ children, className, ...props }: any) {
     <div className="flex flex-col h-screen w-full">
       <AppHeader {...props} />
       <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full w-full">
+        <ScrollArea className="h-full w-full [&_[data-slot=scroll-area-viewport]>div]:!block">
           <div className={className ?? 'min-h-full w-full'}>{children}</div>
         </ScrollArea>
       </div>

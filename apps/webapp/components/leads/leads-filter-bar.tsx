@@ -5,39 +5,19 @@ import { Toggle } from '@workspace/ui/components/toggle';
 import { cn } from '@workspace/ui/lib/utils';
 import { useSearchParams } from '@/hooks/use-search-params';
 import { getSteps } from '@/actions/steps';
+import { getToneClasses, type ToneName } from '@/lib/tone-colors';
 
 interface FilterChip {
   value: string;
   label: string;
-  dotClass: string;
-  activeClass: string;
+  tone: ToneName;
 }
 
 const TASK_ALERT_FILTERS: FilterChip[] = [
-  {
-    value: 'overdue',
-    label: 'Vencidas',
-    dotClass: 'bg-red-500',
-    activeClass: 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100 hover:text-red-700',
-  },
-  {
-    value: 'near',
-    label: 'Vence hoje',
-    dotClass: 'bg-amber-500',
-    activeClass: 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100 hover:text-amber-700',
-  },
-  {
-    value: 'upcoming',
-    label: 'Próximas',
-    dotClass: 'bg-gray-500',
-    activeClass: 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-700',
-  },
-  {
-    value: 'none',
-    label: 'Sem tarefa',
-    dotClass: 'bg-slate-400',
-    activeClass: 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-700',
-  },
+  { value: 'overdue', label: 'Vencidas', tone: 'danger' },
+  { value: 'near', label: 'Vence hoje', tone: 'warning' },
+  { value: 'upcoming', label: 'Próximas', tone: 'neutral' },
+  { value: 'none', label: 'Sem tarefa', tone: 'neutral' },
 ];
 
 const parseCSV = (value: unknown): string[] => {
@@ -90,8 +70,8 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
   const activeStepClass = 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/15 hover:text-primary';
 
   return (
-    <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4 md:flex-wrap">
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4 lg:flex-wrap">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 lg:overflow-visible">
         <span className="text-xs font-medium text-muted-foreground mr-0.5">Tarefas</span>
 
         {TASK_ALERT_FILTERS.map(chip => {
@@ -106,9 +86,9 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
               onPressedChange={() => handleTaskAlertToggle(chip.value)}
               className={cn(
                 'gap-1.5 rounded-full px-3 h-7 text-xs font-medium border transition-colors',
-                isActive ? chip.activeClass : inactiveClass
+                isActive ? getToneClasses(chip.tone).softHover : inactiveClass
               )}>
-              <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', chip.dotClass)} />
+              <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', getToneClasses(chip.tone).dot)} />
               {chip.label}
             </Toggle>
           );
@@ -117,9 +97,9 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
 
       {stepFilters.length > 0 && (
         <>
-          <div className="hidden md:block w-px h-5 bg-border" />
+          <div className="hidden lg:block w-px h-5 bg-border" />
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 lg:overflow-visible">
             <span className="text-xs font-medium text-muted-foreground mr-0.5">Etapas</span>
 
             {stepFilters.map(chip => {
@@ -146,7 +126,7 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
 
       {children && (
         <>
-          <div className="hidden md:block w-px h-5 bg-border" />
+          <div className="hidden lg:block w-px h-5 bg-border" />
           <div className="flex items-center gap-1.5">{children}</div>
         </>
       )}

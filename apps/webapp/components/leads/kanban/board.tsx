@@ -183,7 +183,7 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
 
   if (isLoadingSteps) {
     return (
-      <div className="w-full overflow-x-auto rounded-lg border border-gray-200">
+      <div className="w-full overflow-x-auto rounded-lg border border-border">
         <div className="p-8 text-center text-muted-foreground">Carregando etapas...</div>
       </div>
     );
@@ -191,27 +191,25 @@ export const KanbanBoard = ({ leads, loading = false, pipelineId, onStepChange, 
 
   const visibleColumns = stepFilter?.length ? columns.filter(c => stepFilter.includes(c.id)) : columns;
 
-  const colCount = visibleColumns.length || 1;
-
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-      <div
-        className="flex w-screen -mx-4 px-4 snap-x snap-mandatory gap-3 overflow-x-auto no-scrollbar md:w-full md:mx-0 md:px-0 md:gap-4 xl:grid xl:grid-cols-2 xl:snap-none"
-        style={{ gridTemplateColumns: colCount > 2 ? `repeat(${colCount}, minmax(200px, 1fr))` : undefined }}>
-        {visibleColumns.map(column => (
-          <KanbanColumn
-            key={column.id}
-            step={{ id: column.id, label: column.label, configKey: column.configKey, color: column.color }}
-            leads={leadsByColumn[column.id] || []}
-            loading={loading}
-            loadedAt={loadedAt}
-            columns={columns}
-            closedInfo={closedInfo}
-            onUpdated={onUpdated}
-            onOpenDetails={handleOpenDetails}
-            onMoveStage={handleMoveStage}
-          />
-        ))}
+      <div className="-mx-4 w-screen overflow-x-auto px-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:mx-0 md:w-full md:px-0 md:[scrollbar-width:thin] md:[&::-webkit-scrollbar]:h-2 md:[&::-webkit-scrollbar-thumb]:rounded-full md:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
+        <div className="flex snap-x snap-mandatory gap-3 md:min-w-full md:snap-none md:gap-4">
+          {visibleColumns.map(column => (
+            <KanbanColumn
+              key={column.id}
+              step={{ id: column.id, label: column.label, configKey: column.configKey, color: column.color }}
+              leads={leadsByColumn[column.id] || []}
+              loading={loading}
+              loadedAt={loadedAt}
+              columns={columns}
+              closedInfo={closedInfo}
+              onUpdated={onUpdated}
+              onOpenDetails={handleOpenDetails}
+              onMoveStage={handleMoveStage}
+            />
+          ))}
+        </div>
       </div>
 
       <LeadDetailsSurface item={selectedLead} tab={detailsTab} open={detailsOpen} onOpenChange={setDetailsOpen} />

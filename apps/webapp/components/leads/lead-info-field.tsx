@@ -74,11 +74,11 @@ export const LeadInfoField = ({ leadId, icon, label, value, href, fieldType, onS
 
   if (isEditing) {
     return (
-      <div className="p-3 rounded-md bg-gray-50 border border-gray-200">
+      <div className="p-3 rounded-md bg-muted/50 border border-border">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 text-gray-400 mt-2">{icon}</div>
+          <div className="flex-shrink-0 text-muted-foreground mt-2">{icon}</div>
           <div className="flex-1 space-y-2">
-            <p className="text-xs text-gray-500">{label}</p>
+            <p className="text-xs text-muted-foreground">{label}</p>
             <Input
               type={fieldType === 'email' ? 'email' : fieldType === 'phone' ? 'tel' : 'text'}
               placeholder={label}
@@ -89,13 +89,13 @@ export const LeadInfoField = ({ leadId, icon, label, value, href, fieldType, onS
               className="h-8"
               autoFocus
             />
-            {error && <p className="text-xs text-red-600">{error}</p>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
           </div>
           <div className="flex items-center gap-1 mt-1">
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+              className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950"
               onClick={handleSave}
               disabled={isLoading}
               type="button">
@@ -104,7 +104,7 @@ export const LeadInfoField = ({ leadId, icon, label, value, href, fieldType, onS
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-100"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
               onClick={handleCancel}
               disabled={isLoading}
               type="button">
@@ -118,22 +118,22 @@ export const LeadInfoField = ({ leadId, icon, label, value, href, fieldType, onS
 
   return (
     <div
-      className="flex items-start gap-3 p-3 rounded-md transition-colors hover:bg-gray-50"
+      className="flex items-start gap-3 p-3 rounded-md transition-colors hover:bg-muted/50"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}>
-      <div className="flex-shrink-0 text-gray-400 mt-0.5">{icon}</div>
+      <div className="flex-shrink-0 text-muted-foreground mt-0.5">{icon}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
         {value ? (
           href ? (
             <a href={href} className="text-sm text-primary hover:underline truncate block">
               {value}
             </a>
           ) : (
-            <p className="text-sm text-gray-700 truncate">{value}</p>
+            <p className="text-sm text-foreground truncate">{value}</p>
           )
         ) : (
-          <p className="text-sm text-gray-500">—</p>
+          <p className="text-sm text-muted-foreground">—</p>
         )}
       </div>
       {isHovered && (

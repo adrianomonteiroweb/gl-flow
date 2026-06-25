@@ -6,11 +6,13 @@ import { Button } from '@workspace/ui/components/button';
 import { Separator } from '@workspace/ui/components/separator';
 import { Avatar, AvatarFallback } from '@workspace/ui/components/avatar';
 import { EyeIcon, User, Mail, Phone } from 'lucide-react';
+import { cn } from '@workspace/ui/lib/utils';
 import { DateFormatter } from '@workspace/utils';
 import { LeadInfoField } from '@/components/leads/lead-info-field';
 import { LeadAddressSection } from '@/components/leads/lead-address-section';
 import { LeadDetailedInfo } from '@/components/leads/lead-detailed-info';
 import { AddressData } from '@/repositories/types';
+import { getToneClasses } from '@/lib/tone-colors';
 
 export function DetailClientButton({ client }: any) {
   const [open, setOpen] = useState(false);
@@ -62,17 +64,15 @@ export function DetailClientButton({ client }: any) {
         <div className="space-y-6 py-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-lg bg-primary text-white">{leadInitials}</AvatarFallback>
+              <AvatarFallback className="text-lg bg-primary text-primary-foreground">{leadInitials}</AvatarFallback>
             </Avatar>
             <div>
               <h3 className="text-lg font-semibold">{leadName}</h3>
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  clientData?.deleted_at
-                    ? 'bg-gray-100 text-gray-600'
-                    : 'bg-green-100 text-green-700'
-                }`}
-              >
+                className={cn(
+                  'px-2 py-0.5 rounded-full text-xs font-medium',
+                  clientData?.deleted_at ? getToneClasses('neutral').soft : getToneClasses('success').soft
+                )}>
                 {clientData?.deleted_at ? 'Inativo' : 'Ativo'}
               </span>
             </div>
@@ -81,7 +81,7 @@ export function DetailClientButton({ client }: any) {
           <Separator />
 
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Dados Pessoais</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-3">Dados Pessoais</h4>
             <div className="space-y-1">
               <LeadInfoField
                 leadId={clientData?.id}
@@ -131,15 +131,15 @@ export function DetailClientButton({ client }: any) {
           <Separator />
 
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Datas</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-3">Datas</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-500">Criado em</p>
-                <p className="text-sm text-gray-900">{DateFormatter.dateTime(clientData?.created_at)}</p>
+                <p className="text-xs text-muted-foreground">Criado em</p>
+                <p className="text-sm text-foreground">{DateFormatter.dateTime(clientData?.created_at)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Atualizado em</p>
-                <p className="text-sm text-gray-900">{DateFormatter.dateTime(clientData?.updated_at)}</p>
+                <p className="text-xs text-muted-foreground">Atualizado em</p>
+                <p className="text-sm text-foreground">{DateFormatter.dateTime(clientData?.updated_at)}</p>
               </div>
             </div>
           </div>

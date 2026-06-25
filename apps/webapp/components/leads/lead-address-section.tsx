@@ -25,7 +25,7 @@ export const LeadAddressSection = ({ leadId, address, onAddressSuccess }: LeadAd
   return (
     <div className="space-y-6 mt-6">
       <div>
-        <h4 className="text-sm font-semibold text-gray-700 mb-4">Endereço</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-4">Endereço</h4>
         <div className="space-y-2">
           <LeadAddressField
             leadId={leadId}

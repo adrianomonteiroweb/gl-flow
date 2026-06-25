@@ -27,7 +27,7 @@ export const createColumns = (loadedAt: string): any[] => [
       const taskAlertConfig = taskAlert ? leadTaskAlertConfig[taskAlert] : null;
       return (
         <div className="flex items-center gap-2">
-          {hasNewActivity && <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />}
+          {hasNewActivity && <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 flex-shrink-0" />}
           <span className="flex-1">{row.original.lead?.name || '—'}</span>
           {taskAlertConfig &&
             (() => {
@@ -80,13 +80,13 @@ export const createColumns = (loadedAt: string): any[] => [
         <div className="flex items-center gap-2">
           {assignee ? (
             <>
-              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-white">
+              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
                 {assignee.name?.charAt(0)?.toUpperCase() || '?'}
               </div>
               <span className="text-sm">{assignee.name}</span>
             </>
           ) : (
-            <span className="text-center text-sm text-gray-500">-</span>
+            <span className="text-center text-sm text-muted-foreground">-</span>
           )}
         </div>
       );

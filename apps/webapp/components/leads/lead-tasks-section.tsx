@@ -23,17 +23,18 @@ import { cn } from '@workspace/ui/lib/utils';
 import { DateFormatter } from '@workspace/utils';
 import { getLeadTasks, createTask, toggleTask, deleteTask } from '@/actions/tasks';
 import { getTaskStatus, statusLabel, type TaskLike, type TaskStatus } from '@/utils/task-status';
+import { getToneClasses, type ToneName } from '@/lib/tone-colors';
 
 interface LeadTasksSectionProps {
   leadId: string;
   onTasksChanged?: (tasks: TaskLike[]) => void;
 }
 
-const statusBadgeClass: Record<TaskStatus, string> = {
-  future: 'bg-muted text-muted-foreground',
-  'due-today': 'bg-amber-100 text-amber-700',
-  overdue: 'bg-red-100 text-red-700',
-  completed: 'bg-emerald-100 text-emerald-700',
+const statusTone: Record<TaskStatus, ToneName> = {
+  future: 'neutral',
+  'due-today': 'warning',
+  overdue: 'danger',
+  completed: 'success',
 };
 
 export const LeadTasksSection = ({ leadId, onTasksChanged }: LeadTasksSectionProps) => {
@@ -192,7 +193,7 @@ export const LeadTasksSection = ({ leadId, onTasksChanged }: LeadTasksSectionPro
                     <p className={cn('text-sm font-medium', done && 'text-muted-foreground line-through')}>{task.title}</p>
                     {task.description && <p className="mt-0.5 text-xs text-muted-foreground">{task.description}</p>}
                     <div className="mt-1 flex items-center gap-2">
-                      <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', statusBadgeClass[status])}>{statusLabel[status]}</span>
+                      <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', getToneClasses(statusTone[status]).soft)}>{statusLabel[status]}</span>
                       <span className="text-xs text-muted-foreground">{DateFormatter.dateTime(task.due_date)}</span>
                     </div>
                   </div>

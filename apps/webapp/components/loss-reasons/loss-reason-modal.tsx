@@ -24,11 +24,36 @@ interface LossReasonModalProps {
   leadId: string;
   onConfirm: () => void;
   onCancel: () => void;
+  onOfflineConfirm?: (lossReason: string) => void;
 }
 
 const FREEFORM_ID = '__freeform__';
+const REASONS_CACHE_KEY = 'lf_loss_reasons_cache';
 
-export const LossReasonModal = ({ open, onOpenChange, leadId, onConfirm, onCancel }: LossReasonModalProps) => {
+type ReasonsCache = {
+  reasons: LossReason[];
+  allowFreeform: boolean;
+};
+
+const readReasonsCache = (): ReasonsCache | null => {
+  try {
+    const raw = localStorage.getItem(REASONS_CACHE_KEY);
+
+    return raw ? (JSON.parse(raw) as ReasonsCache) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeReasonsCache = (cache: ReasonsCache): void => {
+  try {
+    localStorage.setItem(REASONS_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // localStorage indisponível
+  }
+};
+
+export const LossReasonModal = ({ open, onOpenChange, leadId, onConfirm, onCancel, onOfflineConfirm }: LossReasonModalProps) => {
   const [reasons, setReasons] = useState<LossReason[]>([]);
   const [allowFreeform, setAllowFreeform] = useState(false);
   const [selectedReasonId, setSelectedReasonId] = useState<string | null>(null);
@@ -58,6 +83,14 @@ export const LossReasonModal = ({ open, onOpenChange, leadId, onConfirm, onCance
   const fetchReasons = useCallback(async () => {
     setIsLoadingReasons(true);
 
+    if (!navigator.onLine) {
+      const cached = readReasonsCache();
+      setReasons(cached?.reasons ?? []);
+      setAllowFreeform(cached?.allowFreeform ?? true);
+      setIsLoadingReasons(false);
+      return;
+    }
+
     const [reasonsResult, freeformResult] = await Promise.all([getActiveLossReasons(), getAllowFreeformLossReasons()]);
 
     if (reasonsResult.success) {
@@ -66,6 +99,10 @@ export const LossReasonModal = ({ open, onOpenChange, leadId, onConfirm, onCance
 
     if (freeformResult.success) {
       setAllowFreeform(freeformResult.data);
+    }
+
+    if (reasonsResult.success && freeformResult.success) {
+      writeReasonsCache({ reasons: reasonsResult.data as LossReason[], allowFreeform: freeformResult.data });
     }
 
     setIsLoadingReasons(false);
@@ -95,13 +132,20 @@ export const LossReasonModal = ({ open, onOpenChange, leadId, onConfirm, onCance
     }
 
     setError(null);
+
+    const reason_name = isFreeform ? freeformText.trim() : (selectedReasonLabel ?? '');
+    const obs = observation.trim();
+    const loss_reason_value = obs ? `${reason_name} — ${obs}` : reason_name;
+
+    if (onOfflineConfirm && !navigator.onLine) {
+      onOfflineConfirm(loss_reason_value);
+      onOpenChange(false);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const reason_name = isFreeform ? freeformText.trim() : (selectedReasonLabel ?? '');
-      const obs = observation.trim();
-      const loss_reason_value = obs ? `${reason_name} — ${obs}` : reason_name;
-
       const result = await updateLeadLossReason(leadId, loss_reason_value);
 
       if (!result.success) {

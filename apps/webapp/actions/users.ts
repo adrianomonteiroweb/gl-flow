@@ -37,7 +37,7 @@ export async function getUsers(params: Omit<GetUserParams, 'workspace_id'>) {
     return { count: 0, data: [] };
   }
 
-  return await UserRepository.getUsers({ ...params, workspace_id });
+  return await UserRepository.getUsers({ ...params, workspace_id, current_user_id: me?.id });
 }
 
 export async function createUser(data: any) {

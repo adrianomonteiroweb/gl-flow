@@ -1,6 +1,5 @@
 'use client';
 
-import { ScrollArea } from '@workspace/ui/components/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@workspace/ui/components/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@workspace/ui/components/drawer';
 import { useIsMobile } from '@workspace/ui/hooks/use-mobile';
@@ -30,11 +29,11 @@ export const LeadDetailsSurface = ({ item, tab, open, onOpenChange }: LeadDetail
   if (is_mobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
+        <DrawerContent className="h-[88vh] max-h-[88vh]">
           <DrawerHeader className="sr-only">
             <DrawerTitle>{lead_name}</DrawerTitle>
           </DrawerHeader>
-          <ScrollArea className="overflow-y-auto">{content}</ScrollArea>
+          <div className="min-h-0 flex-1">{content}</div>
         </DrawerContent>
       </Drawer>
     );
@@ -42,11 +41,11 @@ export const LeadDetailsSurface = ({ item, tab, open, onOpenChange }: LeadDetail
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-md">
+      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="sr-only">
           <SheetTitle>{lead_name}</SheetTitle>
         </SheetHeader>
-        <ScrollArea className="h-full">{content}</ScrollArea>
+        <div className="min-h-0 flex-1">{content}</div>
       </SheetContent>
     </Sheet>
   );

@@ -181,6 +181,11 @@
     display: none;
   }
 
+  .scroll-fade-x {
+    mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 24px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 24px), transparent 100%);
+  }
+
   .calendar-theme {
     @apply font-sans;
     @apply [&_button]:bg-transparent [&_button]:border [&_button]:rounded [&_button]:px-3 [&_button]:py-1.5 [&_button]:text-sm;

@@ -9,6 +9,7 @@ import useServerPaginationTable from '@/hooks/use-server-pagination-table';
 import { getClients } from '@/actions/clients';
 import { CreateClientButton } from '@/components/clients/create-button';
 import { PendingClientsList } from '@/components/clients/pending-clients-list';
+import { OfflineIndicator } from '@/components/commons/offline-indicator';
 
 export function ClientsDataTable() {
   const [response, setResponse] = useState({ data: [], status: 200, count: 0 });
@@ -56,11 +57,16 @@ export function ClientsDataTable() {
   return (
     <div className="space-y-4">
       <div className="hidden lg:flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">Clientes</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold text-foreground">Clientes</h2>
+          <OfflineIndicator />
+        </div>
         <CreateClientButton />
       </div>
 
       <DataTableToolbar actionSlot={<div className="lg:hidden"><CreateClientButton /></div>} />
+
+      <OfflineIndicator className="lg:hidden" />
 
       <PendingClientsList />
 

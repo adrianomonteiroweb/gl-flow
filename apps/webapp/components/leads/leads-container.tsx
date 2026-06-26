@@ -15,10 +15,12 @@ import type { Pipeline } from '@/components/pipelines/types';
 import { useLeadsSSE } from '@/hooks/use-leads-sse';
 import { useLeadsPreferences } from '@/hooks/use-leads-preferences';
 import { useSessionContext } from '@/contexts/session';
+import { useOfflineSyncContext } from '@/contexts/offline-sync';
 import { canAssignLeads } from '@/lib/auth/permissions';
 import { getToneClasses } from '@/lib/tone-colors';
 import { LossReasonModal } from '@/components/loss-reasons/loss-reason-modal';
 import { DistributeDialog } from '@/components/clients/distribute-dialog';
+import { OfflineIndicator } from '@/components/commons/offline-indicator';
 
 import { LeadsDataTable } from './datatable/data-table';
 import { KanbanBoard } from './kanban/board';
@@ -61,6 +63,7 @@ export function LeadsContainer() {
   } | null>(null);
   const { params } = useSearchParams();
   const { user } = useSessionContext();
+  const { is_online, addLeadStepToQueue } = useOfflineSyncContext();
 
   const canDistribute = canAssignLeads(user?.role);
   const hasTeamFilter = teamPipelineIds.length > 0;
@@ -131,6 +134,10 @@ export function LeadsContainer() {
   }, [pipelines, teamPipelineIds, teamFilterActive, selectedPipelineId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchKanbanData = useCallback(async () => {
+    if (!navigator.onLine) {
+      return;
+    }
+
     setKanbanLoading(true);
     setError(null);
 
@@ -209,6 +216,12 @@ export function LeadsContainer() {
         return;
       }
 
+      if (!is_online) {
+        addLeadStepToQueue(leadId, { lead_id: leadId, step_id: newStep, status_id: newStatus, lead_name: lead.lead?.name });
+        toast.success('Etapa salva localmente. Será sincronizada ao reconectar.');
+        return;
+      }
+
       const result = await updateLeadStep(leadId, newStep, newStatus);
 
       if (result.success) {
@@ -246,9 +259,31 @@ export function LeadsContainer() {
     }
   };
 
+  const handleLostOfflineConfirm = (lossReason: string) => {
+    if (!pendingLostChange) {
+      return;
+    }
+
+    const lead = kanbanData.data?.find((item: any) => item.lead?.id === pendingLostChange.leadId);
+
+    addLeadStepToQueue(pendingLostChange.leadId, {
+      lead_id: pendingLostChange.leadId,
+      step_id: pendingLostChange.step,
+      status_id: pendingLostChange.status,
+      loss_reason: lossReason,
+      lead_name: lead?.lead?.name,
+    });
+
+    toast.success('Negociação salva localmente. Será sincronizada ao reconectar.');
+    setPendingLostChange(null);
+  };
+
   const handleLostCancel = () => {
     setPendingLostChange(null);
-    fetchKanbanData();
+
+    if (is_online) {
+      fetchKanbanData();
+    }
   };
 
   const handleViewChange = (newView: ViewType) => {
@@ -264,6 +299,8 @@ export function LeadsContainer() {
         </h2>
 
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <OfflineIndicator />
+
           {view === 'kanban' && visiblePipelines.length > 0 && (
             <Select value={selectedPipelineId ?? undefined} onValueChange={setSelectedPipelineId}>
               <SelectTrigger className="w-full sm:w-48">
@@ -296,7 +333,8 @@ export function LeadsContainer() {
               trigger={
                 <Button type="button" variant="outline" className="gap-2">
                   <Users className="h-4 w-4" />
-                  Distribuir atendimentos
+                  <span className="hidden lg:inline">Distribuir atendimentos</span>
+                  <span className="lg:hidden">Distribuir</span>
                 </Button>
               }
             />
@@ -388,6 +426,7 @@ export function LeadsContainer() {
           }}
           leadId={pendingLostChange.leadId}
           onConfirm={handleLostConfirm}
+          onOfflineConfirm={handleLostOfflineConfirm}
           onCancel={handleLostCancel}
         />
       )}

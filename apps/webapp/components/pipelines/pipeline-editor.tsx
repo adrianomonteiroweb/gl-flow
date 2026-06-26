@@ -26,19 +26,24 @@ export const PipelineEditor = () => {
   const [deleteStageState, setDeleteStageState] = useState<PipelineStage | null>(null);
 
   const loadPipelines = useCallback(async (preferId?: string) => {
-    const result = await getPipelines();
-    if (result.success) {
-      const list = (result.data as Pipeline[]) ?? [];
-      setPipelines(list);
-      setSelectedId(prev => {
-        const target = preferId ?? prev;
-        if (target && list.some(p => p.id === target)) return target;
-        return list.find(p => p.is_default)?.id ?? list[0]?.id ?? null;
-      });
-    } else {
-      toast.error(result.error || 'Erro ao carregar pipelines');
+    try {
+      const result = await getPipelines();
+      if (result.success) {
+        const list = (result.data as Pipeline[]) ?? [];
+        setPipelines(list);
+        setSelectedId(prev => {
+          const target = preferId ?? prev;
+          if (target && list.some(p => p.id === target)) return target;
+          return list.find(p => p.is_default)?.id ?? list[0]?.id ?? null;
+        });
+      } else {
+        toast.error(result.error || 'Erro ao carregar pipelines');
+      }
+    } catch {
+      toast.error('Sem conexão. Não foi possível carregar os pipelines.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const loadStages = useCallback(async (pipelineId: string | null) => {
@@ -47,13 +52,18 @@ export const PipelineEditor = () => {
       return;
     }
     setStagesLoading(true);
-    const result = await getPipelineStages(pipelineId);
-    if (result.success) {
-      setStages((result.data as PipelineStage[]) ?? []);
-    } else {
-      toast.error(result.error || 'Erro ao carregar etapas');
+    try {
+      const result = await getPipelineStages(pipelineId);
+      if (result.success) {
+        setStages((result.data as PipelineStage[]) ?? []);
+      } else {
+        toast.error(result.error || 'Erro ao carregar etapas');
+      }
+    } catch {
+      toast.error('Sem conexão. Não foi possível carregar as etapas.');
+    } finally {
+      setStagesLoading(false);
     }
-    setStagesLoading(false);
   }, []);
 
   useEffect(() => {
@@ -66,39 +76,56 @@ export const PipelineEditor = () => {
 
   const handleReorderPipelines = async (next: Pipeline[]) => {
     setPipelines(next);
-    const result = await reorderPipelines(next.map((p, i) => ({ id: p.id, sort_order: i })));
-    if (!result.success) {
-      toast.error(result.error || 'Erro ao reordenar pipelines');
+    try {
+      const result = await reorderPipelines(next.map((p, i) => ({ id: p.id, sort_order: i })));
+      if (!result.success) {
+        toast.error(result.error || 'Erro ao reordenar pipelines');
+        loadPipelines();
+      }
+    } catch {
+      toast.error('Sem conexão. Não foi possível reordenar os pipelines.');
       loadPipelines();
     }
   };
 
   const handleAddStage = async () => {
     if (!selectedId) return;
-    const result = await createStage(selectedId, { name: 'Nova etapa' });
-    if (result.success) {
-      loadStages(selectedId);
-    } else {
-      toast.error(result.error || 'Erro ao criar etapa');
+    try {
+      const result = await createStage(selectedId, { name: 'Nova etapa' });
+      if (result.success) {
+        loadStages(selectedId);
+      } else {
+        toast.error(result.error || 'Erro ao criar etapa');
+      }
+    } catch {
+      toast.error('Sem conexão. Não foi possível criar a etapa.');
     }
   };
 
   const handleRenameStage = async (id: string, name: string) => {
     setStages(prev => prev.map(s => (s.id === id ? { ...s, name } : s)));
-    const result = await updateStage(id, { name });
-
-    if (!result.success) {
-      toast.error(result.error || 'Erro ao renomear etapa');
+    try {
+      const result = await updateStage(id, { name });
+      if (!result.success) {
+        toast.error(result.error || 'Erro ao renomear etapa');
+        loadStages(selectedId);
+      }
+    } catch {
+      toast.error('Sem conexão. Não foi possível renomear a etapa.');
       loadStages(selectedId);
     }
   };
 
   const handleColorChange = async (id: string, color: string) => {
     setStages(prev => prev.map(s => (s.id === id ? { ...s, color } : s)));
-    const result = await updateStage(id, { color });
-
-    if (!result.success) {
-      toast.error(result.error || 'Erro ao alterar cor');
+    try {
+      const result = await updateStage(id, { color });
+      if (!result.success) {
+        toast.error(result.error || 'Erro ao alterar cor');
+        loadStages(selectedId);
+      }
+    } catch {
+      toast.error('Sem conexão. Não foi possível alterar a cor.');
       loadStages(selectedId);
     }
   };
@@ -106,12 +133,17 @@ export const PipelineEditor = () => {
   const handleReorderStages = async (next: PipelineStage[]) => {
     setStages(next);
     if (!selectedId) return;
-    const result = await reorderStages(
-      selectedId,
-      next.map((s, i) => ({ id: s.id, order: i + 1 }))
-    );
-    if (!result.success) {
-      toast.error(result.error || 'Erro ao reordenar etapas');
+    try {
+      const result = await reorderStages(
+        selectedId,
+        next.map((s, i) => ({ id: s.id, order: i + 1 }))
+      );
+      if (!result.success) {
+        toast.error(result.error || 'Erro ao reordenar etapas');
+        loadStages(selectedId);
+      }
+    } catch {
+      toast.error('Sem conexão. Não foi possível reordenar as etapas.');
       loadStages(selectedId);
     }
   };

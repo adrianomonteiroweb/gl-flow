@@ -71,7 +71,7 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
 
   return (
     <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-4 lg:flex-wrap">
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 lg:overflow-visible">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-fade-x -mx-6 px-6 lg:mx-0 lg:px-0 lg:overflow-visible lg:[mask-image:none]">
         <span className="text-xs font-medium text-muted-foreground mr-0.5">Tarefas</span>
 
         {TASK_ALERT_FILTERS.map(chip => {
@@ -99,7 +99,7 @@ export const LeadsFilterBar = ({ children }: { children?: React.ReactNode }) => 
         <>
           <div className="hidden lg:block w-px h-5 bg-border" />
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 lg:overflow-visible">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-fade-x -mx-6 px-6 lg:mx-0 lg:px-0 lg:overflow-visible lg:[mask-image:none]">
             <span className="text-xs font-medium text-muted-foreground mr-0.5">Etapas</span>
 
             {stepFilters.map(chip => {

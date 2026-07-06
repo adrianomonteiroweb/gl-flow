@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, isNull, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, isNull, isNotNull, or } from 'drizzle-orm';
 
 import BaseRepository from './BaseRepository';
 import { clients_table } from '../schema';
@@ -84,6 +84,7 @@ export class ClientRepository extends BaseRepository {
     assigneeId?: string;
     unassignedOnly?: boolean;
     mineOrUnassignedUserId?: string;
+    type?: 'all' | 'quick_lead' | 'complete';
   }) {
     const { page = 1, page_size = 10 } = params;
     const limit = page_size || 10;
@@ -120,6 +121,12 @@ export class ClientRepository extends BaseRepository {
       conditions.push(
         or(eq(clients_table.assignee_id, params.mineOrUnassignedUserId), isNull(clients_table.assignee_id))!
       );
+    }
+
+    if (params.type === 'quick_lead') {
+      conditions.push(isNull(clients_table.document));
+    } else if (params.type === 'complete') {
+      conditions.push(isNotNull(clients_table.document));
     }
 
     const where = and(...conditions);

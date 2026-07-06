@@ -11,6 +11,7 @@ import { TooltipProvider } from '@workspace/ui/components/tooltip';
 import { SidebarInset, SidebarProvider } from '@workspace/ui/components/sidebar';
 import { SessionProvider } from '@/contexts/session';
 import { OfflineSyncProvider } from '@/contexts/offline-sync';
+import { QuickLeadModal } from '@/components/leads/quick-lead-modal';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -43,6 +44,8 @@ export function Providers({ children }: ProvidersProps) {
                 <SidebarInset>
                   <Suspense fallback={<AppLoading />}>{children}</Suspense>
                 </SidebarInset>
+
+                <QuickLeadModal />
               </SidebarProvider>
             )}
           </TooltipProvider>

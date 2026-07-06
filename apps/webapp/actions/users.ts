@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { GetUserParams, UserRepository } from '@/repositories/UserRepository';
 import { onlyNumbers } from '@workspace/utils/text';
 import { canManageUsers, canManageOwners } from '@/lib/auth/permissions';
-import { resolveWorkspaceId } from '@/lib/workspaces/development-workspace';
+import { resolveWorkspaceId, getDefaultWorkspaceId } from '@/lib/workspaces/development-workspace';
 import { validatePasswordFull } from '@/lib/auth/password-breach';
 
 import { getSession } from './auth';
@@ -72,11 +72,13 @@ export async function createUser(data: any) {
       data.payload = {};
     }
 
+    const workspace_id = data.workspace_id || me.workspace_id || (await getDefaultWorkspaceId());
+
     const sanitizedData = {
       ...data,
       phone: data.phone && onlyNumbers(data.phone),
       payload: JSON.stringify(data.payload),
-      workspace_id: data.workspace_id || me.workspace_id || null,
+      workspace_id,
     };
 
     const createdUser = await UserRepository.create(sanitizedData);

@@ -25,6 +25,7 @@ type NavItem = {
   url?: string;
   items?: NavItem[];
   external?: boolean;
+  action?: () => void;
 };
 
 type NavProps = {
@@ -93,6 +94,19 @@ export function SidebarNav({ items }: NavProps) {
                     <span>{item.title}</span>
                   </SidebarMenuButton>
                 </Link>
+              )}
+
+              {!item?.items?.length && !item.url && item.action && (
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    item.action?.();
+                    handleLinkClick();
+                  }}>
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
               )}
 
               <CollapsibleContent>

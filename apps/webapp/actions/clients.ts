@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
-import { ClientRepository, PipelineRepository, StepRepository, StatusRepository, NegotiationRepository } from '@workspace/db';
+import { ClientRepository, PipelineRepository, StepRepository, StatusRepository, NegotiationRepository, TaskRepository } from '@workspace/db';
 import { onlyNumbers, isCpf } from '@workspace/utils/text';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
 import { isLeadScopeRestricted, canAccessSettings, canAssignLeads } from '@/lib/auth/permissions';
@@ -217,6 +217,7 @@ type GetClientParams = {
   includeInactive?: boolean;
   assigneeId?: string;
   unassignedOnly?: boolean;
+  type?: 'all' | 'quick_lead' | 'complete';
 };
 
 export const getClients = async (params: GetClientParams) => {
@@ -237,6 +238,7 @@ export const getClients = async (params: GetClientParams) => {
       page_size: params.page_size,
       includeInactive,
       mineOrUnassignedUserId: me.id,
+      type: params.type,
     });
   }
 
@@ -248,6 +250,7 @@ export const getClients = async (params: GetClientParams) => {
     includeInactive,
     assigneeId: params.assigneeId,
     unassignedOnly: params.unassignedOnly,
+    type: params.type,
   });
 };
 
@@ -718,6 +721,139 @@ export async function createNegotiationForClient(data: unknown) {
     return { success: true, data: lead };
   } catch (error: unknown) {
     console.error('Erro ao criar negociação:', error);
+    return { success: false, message: 'Ocorreu um erro inesperado. Tente novamente.' };
+  }
+}
+
+const CreateQuickLeadSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  email: z.string().email('E-mail inválido'),
+  phone: z.string().regex(PHONE_REGEX, 'WhatsApp/Telefone inválido'),
+});
+
+export async function createQuickLead(data: unknown) {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { success: false, message: 'Usuário não autenticado' };
+    }
+
+    const workspaceId = await resolveWorkspaceId(me);
+
+    if (!workspaceId) {
+      return { success: false, message: 'Workspace não encontrado.' };
+    }
+
+    const parsed = CreateQuickLeadSchema.safeParse(data);
+
+    if (!parsed.success) {
+      return { success: false, message: parsed.error.errors[0]?.message ?? 'Dados inválidos' };
+    }
+
+    const { id, name, email, phone } = parsed.data;
+
+    const pipeline = await PipelineRepository.findDefaultByWorkspace(workspaceId);
+
+    if (!pipeline) {
+      return { success: false, message: 'Pipeline padrão não encontrado.' };
+    }
+
+    const step = await StepRepository.findBySlug(workspaceId, 'prospeccao');
+
+    if (!step) {
+      return { success: false, message: 'Etapa Prospecção não encontrada.' };
+    }
+
+    const status = await StatusRepository.findBySlug(workspaceId, 'novo');
+
+    if (!status) {
+      return { success: false, message: 'Status Novo não encontrado.' };
+    }
+
+    const client = await ClientRepository.createIdempotent({
+      ...(id ? { id } : {}),
+      workspace_id: workspaceId,
+      assignee_id: me.id,
+      person_type: 'pf',
+      name,
+      email,
+      phone,
+    });
+
+    LeadActivityLogger.log({
+      workspace_id: workspaceId,
+      lead_id: client.id,
+      type: 'lead_created',
+      actor_type: 'user',
+      actor_id: me.id,
+      actor_name: me.name,
+      metadata: { origin: 'quick_lead', entity: 'client' },
+    });
+
+    const lead = await LeadRepository.create({
+      workspace_id: workspaceId,
+      name: client.name,
+      email: client.email ?? null,
+      phone: client.phone ?? null,
+      pipeline_id: pipeline.id,
+      step_id: step.id,
+      status_id: status.id,
+      assignee_id: me.id,
+      sort_order: 0,
+    });
+
+    await NegotiationRepository.create({
+      workspace_id: workspaceId,
+      client_id: client.id,
+      branch_id: client.branch_id ?? null,
+      title: client.name,
+      pipeline_id: pipeline.id,
+      step_id: step.id,
+      status_id: status.id,
+      assignee_id: me.id,
+      sort_order: 0,
+    });
+
+    await TaskRepository.create({
+      workspace_id: workspaceId,
+      lead_id: lead.id,
+      assignee_id: me.id,
+      title: 'Prospectar e Enriquecer Lead',
+      due_date: new Date().toISOString(),
+    });
+
+    LeadActivityLogger.log({
+      workspace_id: workspaceId,
+      lead_id: lead.id,
+      type: 'task_created',
+      actor_type: 'user',
+      actor_id: me.id,
+      actor_name: me.name,
+      metadata: { title: 'Prospectar e Enriquecer Lead' },
+    });
+
+    revalidatePath('/pipelines', 'layout');
+
+    return { success: true, data: lead };
+  } catch (error: unknown) {
+    console.error('Erro ao cadastrar lead:', error);
+    const constraint = (error as any)?.constraint ?? (error as any)?.cause?.constraint;
+    const is_phone_duplicate = constraint === 'uq_client_workspace_phone' || constraint === 'uq_lead_phone_workspace';
+
+    if (is_phone_duplicate) {
+      const parsed_data = CreateQuickLeadSchema.safeParse(data);
+
+      // Replay de um item da fila offline (id presente): o registro já foi persistido —
+      // tratar como sucesso para a fila limpar o item em vez de tentar e falhar.
+      if (parsed_data.success && parsed_data.data.id) {
+        return { success: true };
+      }
+
+      return { success: false, message: 'Já existe um lead ou cliente com este telefone.' };
+    }
+
     return { success: false, message: 'Ocorreu um erro inesperado. Tente novamente.' };
   }
 }

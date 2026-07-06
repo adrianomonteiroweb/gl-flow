@@ -10,6 +10,10 @@ Quando implementado, o fluxo salva dados localmente (localStorage) e sincroniza 
 
 ## Fluxos
 
+### Lead
+
+- [x] Criar lead
+
 ### Clientes
 
 - [x] Criar cliente

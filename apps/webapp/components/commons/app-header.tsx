@@ -1,9 +1,10 @@
 'use client';
 
 import type * as React from 'react';
+import { UserPlusIcon } from 'lucide-react';
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@workspace/ui/components/breadcrumb';
-
+import { Button } from '@workspace/ui/components/button';
 import { Separator } from '@workspace/ui/components/separator';
 import { SidebarTrigger } from '@workspace/ui/components/sidebar';
 import Link from 'next/link';
@@ -37,6 +38,17 @@ export function AppHeader({ title = '', parents = [] }: PageProps) {
       <div className="w-full flex justify-between">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden gap-1.5 text-xs"
+            aria-label="Cadastro Rápido de Lead"
+            onClick={() => document.dispatchEvent(new Event('quick-lead:open'))}>
+            <UserPlusIcon className="size-4" />
+            <span>Novo Lead</span>
+          </Button>
+
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>

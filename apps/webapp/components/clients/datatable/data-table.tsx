@@ -20,6 +20,7 @@ export function ClientsDataTable() {
   const page = Number(params.page) || 1;
   const page_size = Number(params.page_size) || 50;
   const includeInactive = params.inactive === '1';
+  const type = (params.type as 'all' | 'quick_lead' | 'complete') || 'all';
 
   const fetchData = useCallback(async () => {
     if (!navigator.onLine) {
@@ -29,7 +30,7 @@ export function ClientsDataTable() {
     setLoading(true);
 
     try {
-      const res = await getClients({ q, page, page_size, includeInactive });
+      const res = await getClients({ q, page, page_size, includeInactive, type });
 
       setResponse(res as any);
     } catch (error) {
@@ -37,7 +38,7 @@ export function ClientsDataTable() {
     } finally {
       setLoading(false);
     }
-  }, [q, page, page_size, includeInactive]);
+  }, [q, page, page_size, includeInactive, type]);
 
   useEffect(() => {
     fetchData();

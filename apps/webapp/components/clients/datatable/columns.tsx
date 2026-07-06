@@ -11,6 +11,18 @@ import { getToneClasses } from '@/lib/tone-colors';
 
 export const columns: any = [
   {
+    accessorKey: 'document',
+    header: 'Cadastro',
+    cell: ({ row }: any) => {
+      const isQuickLead = !row.original.document;
+      return (
+        <Badge variant="secondary" className={isQuickLead ? getToneClasses('info').soft : getToneClasses('success').soft}>
+          {isQuickLead ? 'Rápido' : 'Completo'}
+        </Badge>
+      );
+    },
+  },
+  {
     accessorKey: 'name',
     header: 'Nome',
   },

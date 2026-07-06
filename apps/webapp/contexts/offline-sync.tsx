@@ -4,13 +4,14 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type * as React from 'react';
 import { toast } from 'sonner';
 
-import { createClient, createNegotiationForClient } from '@/actions/clients';
+import { createClient, createNegotiationForClient, createQuickLead } from '@/actions/clients';
 import { updateLeadStep, updateLeadLossReason } from '@/actions/leads';
 import type { PartnerData } from '@/repositories/types';
 
 const CLIENTS_STORAGE_KEY = 'lf_offline_queue_clients';
 const NEGOTIATIONS_STORAGE_KEY = 'lf_offline_queue_negotiations';
 const LEAD_STEPS_STORAGE_KEY = 'lf_offline_queue_lead_steps';
+const QUICK_LEADS_STORAGE_KEY = 'lf_offline_queue_quick_leads';
 const MAX_ATTEMPTS = 3;
 
 export type ClientPayload = {
@@ -72,6 +73,19 @@ export type OfflineLeadStepItem = {
   attempts: number;
 };
 
+export type QuickLeadPayload = {
+  name: string;
+  email: string;
+  phone: string;
+};
+
+export type OfflineQuickLeadItem = {
+  id: string;
+  payload: QuickLeadPayload;
+  queued_at: string;
+  attempts: number;
+};
+
 type OfflineSyncContextValue = {
   is_online: boolean;
   is_syncing: boolean;
@@ -79,9 +93,11 @@ type OfflineSyncContextValue = {
   pending_clients: OfflineClientItem[];
   pending_negotiations: OfflineNegotiationItem[];
   pending_lead_steps: OfflineLeadStepItem[];
+  pending_quick_leads: OfflineQuickLeadItem[];
   addClientToQueue: (id: string, payload: ClientPayload) => void;
   addNegotiationToQueue: (id: string, payload: NegotiationPayload) => void;
   addLeadStepToQueue: (id: string, payload: LeadStepPayload) => void;
+  addQuickLeadToQueue: (id: string, payload: QuickLeadPayload) => void;
 };
 
 const OfflineSyncContext = createContext<OfflineSyncContextValue>({
@@ -91,9 +107,11 @@ const OfflineSyncContext = createContext<OfflineSyncContextValue>({
   pending_clients: [],
   pending_negotiations: [],
   pending_lead_steps: [],
+  pending_quick_leads: [],
   addClientToQueue: () => {},
   addNegotiationToQueue: () => {},
   addLeadStepToQueue: () => {},
+  addQuickLeadToQueue: () => {},
 });
 
 const readQueue = <T,>(key: string): T[] => {
@@ -120,6 +138,8 @@ const readNegotiationQueue = (): OfflineNegotiationItem[] => readQueue<OfflineNe
 const writeNegotiationQueue = (items: OfflineNegotiationItem[]): void => writeQueue(NEGOTIATIONS_STORAGE_KEY, items);
 const readLeadStepQueue = (): OfflineLeadStepItem[] => readQueue<OfflineLeadStepItem>(LEAD_STEPS_STORAGE_KEY);
 const writeLeadStepQueue = (items: OfflineLeadStepItem[]): void => writeQueue(LEAD_STEPS_STORAGE_KEY, items);
+const readQuickLeadQueue = (): OfflineQuickLeadItem[] => readQueue<OfflineQuickLeadItem>(QUICK_LEADS_STORAGE_KEY);
+const writeQuickLeadQueue = (items: OfflineQuickLeadItem[]): void => writeQueue(QUICK_LEADS_STORAGE_KEY, items);
 
 export const OfflineSyncProvider = ({ children }: { children: React.ReactNode }) => {
   const [is_online, set_is_online] = useState(true);
@@ -127,12 +147,14 @@ export const OfflineSyncProvider = ({ children }: { children: React.ReactNode })
   const [pending_clients, set_pending_clients] = useState<OfflineClientItem[]>([]);
   const [pending_negotiations, set_pending_negotiations] = useState<OfflineNegotiationItem[]>([]);
   const [pending_lead_steps, set_pending_lead_steps] = useState<OfflineLeadStepItem[]>([]);
+  const [pending_quick_leads, set_pending_quick_leads] = useState<OfflineQuickLeadItem[]>([]);
   const is_syncing_ref = useRef(false);
 
   const refreshItems = useCallback(() => {
     set_pending_clients(readClientQueue());
     set_pending_negotiations(readNegotiationQueue());
     set_pending_lead_steps(readLeadStepQueue());
+    set_pending_quick_leads(readQuickLeadQueue());
   }, []);
 
   const syncClientQueue = useCallback(async (): Promise<number> => {
@@ -260,6 +282,45 @@ export const OfflineSyncProvider = ({ children }: { children: React.ReactNode })
     return synced_count;
   }, []);
 
+  const syncQuickLeadQueue = useCallback(async (): Promise<number> => {
+    const queue = readQuickLeadQueue();
+    let synced_count = 0;
+
+    for (const item of queue) {
+      try {
+        const result = await createQuickLead({ ...item.payload, id: item.id });
+
+        if (result?.success) {
+          const current = readQuickLeadQueue();
+          writeQuickLeadQueue(current.filter(q => q.id !== item.id));
+          synced_count++;
+        } else {
+          const next_attempts = item.attempts + 1;
+          const current = readQuickLeadQueue();
+
+          if (next_attempts >= MAX_ATTEMPTS) {
+            writeQuickLeadQueue(current.filter(q => q.id !== item.id));
+            toast.error(`Falha ao sincronizar lead "${item.payload.name}". Tente cadastrar novamente.`);
+          } else {
+            writeQuickLeadQueue(current.map(q => (q.id === item.id ? { ...q, attempts: next_attempts } : q)));
+          }
+        }
+      } catch {
+        const next_attempts = item.attempts + 1;
+        const current = readQuickLeadQueue();
+
+        if (next_attempts >= MAX_ATTEMPTS) {
+          writeQuickLeadQueue(current.filter(q => q.id !== item.id));
+          toast.error(`Falha ao sincronizar lead "${item.payload.name}". Tente cadastrar novamente.`);
+        } else {
+          writeQuickLeadQueue(current.map(q => (q.id === item.id ? { ...q, attempts: next_attempts } : q)));
+        }
+      }
+    }
+
+    return synced_count;
+  }, []);
+
   const syncQueue = useCallback(async (): Promise<void> => {
     if (is_syncing_ref.current) {
       return;
@@ -268,8 +329,9 @@ export const OfflineSyncProvider = ({ children }: { children: React.ReactNode })
     const clients = readClientQueue();
     const negotiations = readNegotiationQueue();
     const lead_steps = readLeadStepQueue();
+    const quick_leads = readQuickLeadQueue();
 
-    if (clients.length === 0 && negotiations.length === 0 && lead_steps.length === 0) {
+    if (clients.length === 0 && negotiations.length === 0 && lead_steps.length === 0 && quick_leads.length === 0) {
       return;
     }
 
@@ -279,6 +341,7 @@ export const OfflineSyncProvider = ({ children }: { children: React.ReactNode })
     const synced_clients = await syncClientQueue();
     const synced_negotiations = await syncNegotiationQueue();
     const synced_lead_steps = await syncLeadStepQueue();
+    const synced_quick_leads = await syncQuickLeadQueue();
 
     is_syncing_ref.current = false;
     set_is_syncing(false);
@@ -301,7 +364,14 @@ export const OfflineSyncProvider = ({ children }: { children: React.ReactNode })
       toast.success(`${label} com sucesso.`);
       document.dispatchEvent(new Event('leads:updated'));
     }
-  }, [refreshItems, syncClientQueue, syncNegotiationQueue, syncLeadStepQueue]);
+
+    if (synced_quick_leads > 0) {
+      const label = synced_quick_leads === 1 ? '1 lead sincronizado' : `${synced_quick_leads} leads sincronizados`;
+      toast.success(`${label} com sucesso.`);
+      document.dispatchEvent(new Event('leads:updated'));
+      document.dispatchEvent(new Event('clients:updated'));
+    }
+  }, [refreshItems, syncClientQueue, syncNegotiationQueue, syncLeadStepQueue, syncQuickLeadQueue]);
 
   useEffect(() => {
     set_is_online(navigator.onLine);
@@ -374,10 +444,25 @@ export const OfflineSyncProvider = ({ children }: { children: React.ReactNode })
     set_pending_lead_steps(next);
   }, []);
 
-  const pending_count = pending_clients.length + pending_negotiations.length + pending_lead_steps.length;
+  const addQuickLeadToQueue = useCallback((id: string, payload: QuickLeadPayload): void => {
+    const queue = readQuickLeadQueue();
+    const item: OfflineQuickLeadItem = {
+      id,
+      payload,
+      queued_at: new Date().toISOString(),
+      attempts: 0,
+    };
+
+    const next = [...queue, item];
+
+    writeQuickLeadQueue(next);
+    set_pending_quick_leads(next);
+  }, []);
+
+  const pending_count = pending_clients.length + pending_negotiations.length + pending_lead_steps.length + pending_quick_leads.length;
 
   return (
-    <OfflineSyncContext.Provider value={{ is_online, is_syncing, pending_count, pending_clients, pending_negotiations, pending_lead_steps, addClientToQueue, addNegotiationToQueue, addLeadStepToQueue }}>
+    <OfflineSyncContext.Provider value={{ is_online, is_syncing, pending_count, pending_clients, pending_negotiations, pending_lead_steps, pending_quick_leads, addClientToQueue, addNegotiationToQueue, addLeadStepToQueue, addQuickLeadToQueue }}>
       {children}
     </OfflineSyncContext.Provider>
   );

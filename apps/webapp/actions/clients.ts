@@ -1056,3 +1056,30 @@ export async function reactivateClient(id: string) {
     return { status: 500, message: 'Ocorreu um erro inesperado. Tente novamente.' };
   }
 }
+
+export async function getClient(id: string) {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    const workspaceId = await resolveWorkspaceId(me);
+
+    if (!workspaceId) {
+      return { success: false, error: 'Workspace não encontrado' };
+    }
+
+    const client = await ClientRepository.findById(id);
+
+    if (!client || client.workspace_id !== workspaceId) {
+      return { success: false, error: 'Cliente não encontrado' };
+    }
+
+    return { success: true, data: client };
+  } catch (error: any) {
+    console.error('Erro ao buscar cliente:', error);
+    return { success: false, error: error?.message || 'Erro ao buscar cliente' };
+  }
+}

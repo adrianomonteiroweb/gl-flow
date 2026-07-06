@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
-import { StepRepository, StatusRepository } from '@workspace/db';
+import { StepRepository, StatusRepository, ClientRepository } from '@workspace/db';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
 import { AddressData } from '@/repositories/types';
 import { LeadActivityLogger } from '@/lib/activities/lead-activity-logger';
@@ -282,5 +282,62 @@ export async function updateLeadAddress(id: string, address: AddressData) {
       success: false,
       error: error?.message || 'Erro ao atualizar endereço',
     };
+  }
+}
+
+export async function updateLeadVehicleInterest(leadId: string, interested: boolean) {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    const lead = await LeadRepository.findById(leadId);
+
+    if (!lead) {
+      return { success: false, error: 'Lead não encontrado' };
+    }
+
+    const currentPayload = (lead.payload as Record<string, unknown>) ?? {};
+    let clientId = currentPayload.client_id as string | undefined;
+    let client: Record<string, unknown> | null = null;
+
+    if (interested) {
+      if (!clientId && lead.phone) {
+        const workspaceId = lead.workspace_id ?? me.workspace_id;
+
+        if (workspaceId) {
+          const found = await ClientRepository.findByPhone(workspaceId, lead.phone);
+
+          if (found) {
+            client = found as Record<string, unknown>;
+            clientId = found.id;
+          }
+        }
+      } else if (clientId) {
+        const found = await ClientRepository.findById(clientId);
+
+        if (found) {
+          client = found as Record<string, unknown>;
+        }
+      }
+    }
+
+    const newPayload: Record<string, unknown> = {
+      ...currentPayload,
+      vehicle_interest: interested,
+    };
+
+    if (clientId) {
+      newPayload.client_id = clientId;
+    }
+
+    await LeadRepository.update(leadId, { payload: newPayload });
+
+    return { success: true, data: { client } };
+  } catch (error: any) {
+    console.error('Error updating lead vehicle interest:', error);
+    return { success: false, error: error?.message || 'Erro ao atualizar interesse em veículo' };
   }
 }

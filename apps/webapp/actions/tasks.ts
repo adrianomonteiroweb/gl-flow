@@ -133,6 +133,50 @@ export const toggleTask = async (taskId: string) => {
   }
 };
 
+const ENRICHMENT_TASK_TITLE = 'Prospectar e Enriquecer Lead';
+
+export const completeLeadEnrichmentTask = async (leadId: string) => {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { success: false as const, error: 'Usuário não autenticado' };
+    }
+
+    const workspace_id = await resolveWorkspaceId(me);
+
+    if (!workspace_id) {
+      return { success: false as const, error: WORKSPACE_REQUIRED_ERROR };
+    }
+
+    const tasks = await TaskRepository.findAllByLead(leadId);
+    const target = tasks.find(t => t.title === ENRICHMENT_TASK_TITLE && !t.completed_at);
+
+    if (!target) {
+      return { success: true as const };
+    }
+
+    const data = await TaskRepository.update(target.id, { completed_at: new Date().toISOString() });
+
+    LeadActivityLogger.log({
+      workspace_id,
+      lead_id: leadId,
+      type: 'task_completed',
+      actor_type: 'user',
+      actor_id: me.id,
+      actor_name: me.name,
+      metadata: { taskId: target.id, title: ENRICHMENT_TASK_TITLE },
+    });
+
+    revalidatePath('/pipelines', 'layout');
+
+    return { success: true as const, data };
+  } catch (error: any) {
+    console.error('Error completing enrichment task:', error);
+    return { success: false as const, error: error?.message || 'Erro ao completar tarefa' };
+  }
+};
+
 export const deleteTask = async (taskId: string) => {
   try {
     const me = await getMe();

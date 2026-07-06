@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -20,16 +20,28 @@ import { buildClientPayload, clientFormSchema, clientToFormValues, type ClientFo
 
 type ClientEditFormProps = {
   client: Record<string, any>;
+  initialValues?: ClientFormValues | null;
+  onReady?: (getValues: () => ClientFormValues) => void;
   onSaved?: (client: Record<string, any>) => void;
   onCancel?: () => void;
 };
 
-export const ClientEditForm = ({ client, onSaved, onCancel }: ClientEditFormProps) => {
+export const ClientEditForm = ({ client, initialValues, onReady, onSaved, onCancel }: ClientEditFormProps) => {
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
-    defaultValues: clientToFormValues(client),
+    defaultValues: initialValues ?? clientToFormValues(client),
     mode: 'onSubmit',
   });
+
+  useEffect(() => {
+    if (!onReady) {
+      return;
+    }
+
+    onReady(() => form.getValues());
+    // onReady and form are stable references — no re-registration needed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -61,6 +73,10 @@ export const ClientEditForm = ({ client, onSaved, onCancel }: ClientEditFormProp
 
   const handleInvalid = (): void => {
     toast.error('Preencha os campos obrigatórios destacados.');
+    setTimeout(() => {
+      const errorEl = document.querySelector('[aria-invalid="true"]');
+      errorEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 0);
   };
 
   return (

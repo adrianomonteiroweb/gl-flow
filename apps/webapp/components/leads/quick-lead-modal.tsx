@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,6 +31,7 @@ type QuickLeadValues = z.infer<typeof QuickLeadSchema>;
 const DEFAULT_VALUES: QuickLeadValues = { name: '', email: '', phone: '' };
 
 export const QuickLeadModal = () => {
+  const pathname = usePathname();
   const { user, loading } = useSessionContext();
   const { is_online, addQuickLeadToQueue } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
@@ -42,11 +44,11 @@ export const QuickLeadModal = () => {
   });
 
   useEffect(() => {
-    if (!loading && user && !opened_ref.current) {
+    if (!loading && user && !opened_ref.current && pathname.startsWith('/pipelines')) {
       opened_ref.current = true;
       setOpen(true);
     }
-  }, [loading, user]);
+  }, [loading, user, pathname]);
 
   useEffect(() => {
     const handleOpen = () => {

@@ -157,12 +157,15 @@ export const clientFormSchema = z
   .superRefine((data, ctx) => {
     const digits = onlyNumbers(data.document);
 
-    if (data.personType === 'pf' && !isCpf(digits)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['document'], message: 'CPF inválido' });
-    }
+    // Only validate document format when one is actually provided (edit form may have no document yet)
+    if (digits.length > 0) {
+      if (data.personType === 'pf' && !isCpf(digits)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['document'], message: 'CPF inválido' });
+      }
 
-    if (data.personType === 'pj' && !isCnpj(digits)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['document'], message: 'CNPJ inválido' });
+      if (data.personType === 'pj' && !isCnpj(digits)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['document'], message: 'CNPJ inválido' });
+      }
     }
 
     if (data.personType === 'pf') {

@@ -18,6 +18,7 @@ import { LeadAddressSection } from './lead-address-section';
 import { LeadDetailedInfo } from './lead-detailed-info';
 import { LeadTasksSection } from './lead-tasks-section';
 import { LeadTimelineSection } from './lead-timeline-section';
+import { LeadVehicleInterest } from './lead-vehicle-interest';
 
 export type LeadFieldChange =
   | { kind: 'name' | 'email' | 'phone'; value: string | undefined }
@@ -204,6 +205,12 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
                       href={leadData?.phone ? `tel:${leadData.phone}` : undefined}
                       fieldType="phone"
                       onSuccess={handleFieldSuccess}
+                    />
+
+                    <LeadVehicleInterest
+                      leadId={leadData.id}
+                      vehicleInterest={!!(leadData?.payload as Record<string, unknown>)?.vehicle_interest}
+                      clientId={((leadData?.payload as Record<string, unknown>)?.client_id as string) ?? null}
                     />
                   </div>
                 </div>

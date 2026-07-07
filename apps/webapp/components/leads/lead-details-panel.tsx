@@ -211,6 +211,9 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
                       leadId={leadData.id}
                       vehicleInterest={!!(leadData?.payload as Record<string, unknown>)?.vehicle_interest}
                       clientId={((leadData?.payload as Record<string, unknown>)?.client_id as string) ?? null}
+                      leadName={leadData?.name}
+                      leadEmail={leadData?.email}
+                      leadPhone={leadData?.phone}
                     />
                   </div>
                 </div>

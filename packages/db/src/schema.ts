@@ -443,6 +443,10 @@ export const negotiations_table = schema.table(
     status_id: varchar('status_id', { length: 255 }).references(() => status_table.id),
     assignee_id: varchar('assignee_id', { length: 255 }).references(() => users_table.id),
 
+    // Selected catalog model (0km vehicle of interest). Nullable at DB level:
+    // enforced as required only in the "Nova Negociação" wizard.
+    vehicle_model_id: varchar('vehicle_model_id', { length: 255 }).references(() => vehicle_models_table.id),
+
     sort_order: integer('sort_order').default(0).notNull(),
 
     vehicle_price: numeric('vehicle_price'),
@@ -469,6 +473,7 @@ export const negotiations_table = schema.table(
     index('idx_negotiations_branch').on(table.branch_id),
     index('idx_negotiations_pipeline_step').on(table.workspace_id, table.pipeline_id, table.step_id),
     index('idx_negotiations_assignee').on(table.assignee_id),
+    index('idx_negotiations_vehicle_model').on(table.vehicle_model_id),
   ]
 );
 
@@ -530,6 +535,56 @@ export const vehicles_table = schema.table(
     uniqueIndex('uq_vehicle_workspace_chassi')
       .on(table.workspace_id, table.chassi)
       .where(sql`chassi IS NOT NULL AND deleted_at IS NULL`),
+  ]
+);
+
+// ─── Vehicle models (catálogo de modelos — novos e usados) ──────────────────
+// Distinct from vehicles_table (stock/used/trade-in units with plate/chassi).
+// This is the sales catalog: a model the customer can choose in a negotiation.
+export const VEHICLE_SEGMENTS = ['street', 'scooter', 'adventure', 'offroad'] as const;
+export type VehicleSegment = (typeof VEHICLE_SEGMENTS)[number];
+
+export const VEHICLE_CONDITIONS = ['new', 'used'] as const;
+export type VehicleCondition = (typeof VEHICLE_CONDITIONS)[number];
+
+export const vehicle_models_table = schema.table(
+  'vehicle_models',
+  {
+    id: varchar('id', { length: 255 })
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+
+    workspace_id: varchar('workspace_id', { length: 255 })
+      .notNull()
+      .references(() => workspaces_table.id),
+
+    make: varchar('make', { length: 100 }).default('Honda').notNull(),
+    model: varchar('model', { length: 150 }).notNull(),
+    version: varchar('version', { length: 150 }),
+    segment: varchar('segment', { length: 20 }).notNull(),
+    condition: varchar('condition', { length: 10 }).default('new').notNull(),
+
+    model_year: integer('model_year'),
+    manufacture_year: integer('manufacture_year'),
+
+    price: numeric('price').notNull(),
+    image_url: varchar('image_url', { length: 500 }),
+
+    is_active: boolean('is_active').default(true).notNull(),
+    sort_order: integer('sort_order').default(0).notNull(),
+
+    payload: jsonb('payload'),
+    metadata: jsonb('metadata'),
+
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
+  },
+  table => [
+    index('idx_vehicle_models_workspace').on(table.workspace_id),
+    index('idx_vehicle_models_segment').on(table.workspace_id, table.segment),
+    index('idx_vehicle_models_active').on(table.workspace_id, table.is_active),
+    index('idx_vehicle_models_condition').on(table.workspace_id, table.condition),
   ]
 );
 

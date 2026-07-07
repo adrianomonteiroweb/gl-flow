@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Car, Pencil } from 'lucide-react';
+import { Car, Pencil, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { cpfOrCnpj } from '@workspace/utils/text';
@@ -15,12 +15,16 @@ import { getClient } from '@/actions/clients';
 import { completeLeadEnrichmentTask } from '@/actions/tasks';
 import { maritalStatusLabel } from '@/lib/clients/marital-status';
 import { ClientEditForm } from '@/components/clients/client-edit-form';
+import { ClientDialogForm, type ClientDialogResult } from '@/components/clients/dialog-form';
 import type { ClientFormValues } from '@/components/clients/client-form-schema';
 
 interface LeadVehicleInterestProps {
   leadId: string;
   vehicleInterest: boolean;
   clientId?: string | null;
+  leadName?: string;
+  leadEmail?: string;
+  leadPhone?: string;
 }
 
 interface ClientEnrichedInfoProps {
@@ -82,10 +86,11 @@ const ClientEnrichedInfo = ({ client, onEdit }: ClientEnrichedInfoProps) => {
   );
 };
 
-export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId }: LeadVehicleInterestProps) => {
+export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadName, leadEmail, leadPhone }: LeadVehicleInterestProps) => {
   const [interested, setInterested] = useState(vehicleInterest);
   const [client, setClient] = useState<Record<string, any> | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   // formKey increments only on explicit cancel/save to remount the form with fresh defaults.
   const [formKey, setFormKey] = useState(0);
@@ -106,6 +111,16 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId }: LeadV
     });
   }, [vehicleInterest, clientId]);
 
+  // Opens the right registration modal for the current state. Guarantees the
+  // action even when the toggle's auto-open did not fire (no linked client).
+  const openRegistration = (linkedClient: Record<string, any> | null) => {
+    if (linkedClient) {
+      setEditOpen(true);
+    } else {
+      setCreateOpen(true);
+    }
+  };
+
   const handleToggle = async (checked: boolean) => {
     setLoading(true);
 
@@ -123,12 +138,9 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId }: LeadV
         return;
       }
 
-      const linkedClient = result.data?.client ?? null;
-
-      if (linkedClient) {
-        setClient(linkedClient as Record<string, any>);
-        setEditOpen(true);
-      }
+      const linkedClient = (result.data?.client as Record<string, any> | null) ?? null;
+      setClient(linkedClient);
+      openRegistration(linkedClient);
     } finally {
       setLoading(false);
     }
@@ -157,6 +169,23 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId }: LeadV
     setFormKey(k => k + 1);
   };
 
+  const handleClientCreated = async (result?: ClientDialogResult) => {
+    setCreateOpen(false);
+
+    if (!result) {
+      return;
+    }
+
+    const linkResult = await updateLeadVehicleInterest(leadId, true, result.id);
+    const linkedClient = (linkResult.data?.client as Record<string, any> | null) ?? null;
+
+    if (linkedClient) {
+      setClient(linkedClient);
+    }
+
+    completeLeadEnrichmentTask(leadId);
+  };
+
   return (
     <div>
       <div className="flex items-center gap-3 rounded-md border border-border px-3 py-3">
@@ -165,7 +194,18 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId }: LeadV
         <Switch checked={interested} onCheckedChange={handleToggle} disabled={loading} aria-label="Tem interesse em adquirir um veículo?" />
       </div>
 
-      {interested && client && <ClientEnrichedInfo client={client} onEdit={() => setEditOpen(true)} />}
+      {interested &&
+        (client ? (
+          <ClientEnrichedInfo client={client} onEdit={() => setEditOpen(true)} />
+        ) : (
+          <div className="mt-2 flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2.5">
+            <span className="text-xs text-muted-foreground">Cliente ainda não cadastrado</span>
+            <Button type="button" variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs" onClick={() => setCreateOpen(true)}>
+              <UserPlus className="h-3 w-3" />
+              Cadastrar cliente
+            </Button>
+          </div>
+        ))}
 
       <Dialog open={editOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[680px]">
@@ -174,11 +214,26 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId }: LeadV
               key={formKey}
               client={client}
               initialValues={capturedValues}
-              onReady={fn => { getValuesRef.current = fn; }}
+              onReady={fn => {
+                getValuesRef.current = fn;
+              }}
               onSaved={handleSaved}
               onCancel={handleCancel}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[680px]">
+          <ClientDialogForm
+            onSubmit={handleClientCreated}
+            initialValues={{
+              name: leadName,
+              phone: leadPhone,
+              email: leadEmail,
+            }}
+          />
         </DialogContent>
       </Dialog>
     </div>

@@ -39,16 +39,17 @@ export type ClientDialogResult = {
   isExisting: boolean;
 };
 
-export const ClientDialogForm = ({ onSubmit = () => {} }: { onSubmit?: (result?: ClientDialogResult) => void }) => {
+export const ClientDialogForm = ({ onSubmit = () => {}, initialValues }: { onSubmit?: (result?: ClientDialogResult) => void; initialValues?: Partial<ClientFormValues> } = {}) => {
   const { is_online, addClientToQueue } = useOfflineSyncContext();
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
-    defaultValues: DEFAULT_CLIENT_FORM,
+    defaultValues: initialValues ? { ...DEFAULT_CLIENT_FORM, ...initialValues } : DEFAULT_CLIENT_FORM,
     mode: 'onSubmit',
   });
 
-  const [documentStatus, setDocumentStatus] = useState<DocumentStatus>('idle');
+  const hasPreFill = !!(initialValues?.name || initialValues?.phone || initialValues?.email);
+  const [documentStatus, setDocumentStatus] = useState<DocumentStatus>(hasPreFill ? 'not-found' : 'idle');
   const [existingClient, setExistingClient] = useState<Record<string, unknown> | null>(null);
   const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

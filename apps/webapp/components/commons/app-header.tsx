@@ -1,13 +1,19 @@
 'use client';
 
 import type * as React from 'react';
-import { UserPlusIcon } from 'lucide-react';
+import { Plus, UserPlusIcon } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@workspace/ui/components/breadcrumb';
 import { Button } from '@workspace/ui/components/button';
 import { Separator } from '@workspace/ui/components/separator';
 import { SidebarTrigger } from '@workspace/ui/components/sidebar';
 import Link from 'next/link';
+
+import { NewNegotiationDialog } from '@/components/leads/new-negotiation-dialog';
+
+// Configuration screens where the global "Nova Negociação" action is hidden.
+const CONFIG_ROUTES = ['/users', '/settings'];
 
 type BreadcrumbLinkItem = {
   name: string;
@@ -22,6 +28,9 @@ type PageProps = {
 };
 
 export function AppHeader({ title = '', parents = [] }: PageProps) {
+  const pathname = usePathname();
+  const isConfigScreen = CONFIG_ROUTES.some(route => pathname === route || pathname.startsWith(`${route}/`));
+
   const BreadcrumpItem = ({ item }: any) => (
     <>
       <BreadcrumbItem className="hidden md:block">
@@ -62,6 +71,20 @@ export function AppHeader({ title = '', parents = [] }: PageProps) {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+
+        {!isConfigScreen && (
+          <div className="flex items-center gap-2 px-4">
+            <NewNegotiationDialog
+              trigger={
+                <Button type="button" size="sm" className="gap-1.5">
+                  <Plus className="size-4" />
+                  <span className="hidden sm:inline">Nova Negociação</span>
+                  <span className="sm:hidden">Nova</span>
+                </Button>
+              }
+            />
+          </div>
+        )}
       </div>
     </header>
   );

@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
-import { ClientRepository, PipelineRepository, StepRepository, StatusRepository, NegotiationRepository, TaskRepository } from '@workspace/db';
+import { ClientRepository, PipelineRepository, StepRepository, StatusRepository, NegotiationRepository, TaskRepository, VehicleModelRepository } from '@workspace/db';
 import { onlyNumbers, isCpf } from '@workspace/utils/text';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
 import { isLeadScopeRestricted, canAccessSettings, canAssignLeads } from '@/lib/auth/permissions';
@@ -629,6 +629,9 @@ export async function createClient(data: unknown) {
 
 const CreateNegotiationSchema = z.object({
   client_id: z.string().min(1, 'ID do cliente é obrigatório'),
+  // Required in the "Nova Negociação" wizard (enforced in the UI). Optional here so
+  // offline-queued negotiations — created without catalog access — can still sync.
+  vehicle_model_id: z.string().min(1).optional(),
 });
 
 export async function createNegotiationForClient(data: unknown) {
@@ -655,6 +658,28 @@ export async function createNegotiationForClient(data: unknown) {
 
     if (!client || client.workspace_id !== workspaceId) {
       return { success: false, message: 'Cliente não encontrado.' };
+    }
+
+    let vehicleModel: Record<string, any> | null = null;
+    let vehicleModelSummary: Record<string, unknown> | null = null;
+
+    if (parsed.data.vehicle_model_id) {
+      vehicleModel = await VehicleModelRepository.findInWorkspace(parsed.data.vehicle_model_id, workspaceId);
+
+      if (!vehicleModel) {
+        return { success: false, message: 'Veículo de interesse não encontrado.' };
+      }
+
+      vehicleModelSummary = {
+        id: vehicleModel.id,
+        make: vehicleModel.make,
+        model: vehicleModel.model,
+        version: vehicleModel.version ?? null,
+        segment: vehicleModel.segment,
+        model_year: vehicleModel.model_year ?? null,
+        price: vehicleModel.price ?? null,
+        image_url: vehicleModel.image_url ?? null,
+      };
     }
 
     const pipeline = await PipelineRepository.findDefaultByWorkspace(workspaceId);
@@ -685,6 +710,11 @@ export async function createNegotiationForClient(data: unknown) {
       status_id: status.id,
       assignee_id: me.id,
       sort_order: 0,
+      payload: {
+        client_id: client.id,
+        vehicle_interest: !!vehicleModelSummary,
+        ...(vehicleModelSummary ? { vehicle_model: vehicleModelSummary } : {}),
+      },
     });
 
     const existingNegotiations = await NegotiationRepository.findByClient(workspaceId, client.id);
@@ -703,6 +733,9 @@ export async function createNegotiationForClient(data: unknown) {
         status_id: status.id,
         assignee_id: me.id,
         sort_order: 0,
+        ...(vehicleModel
+          ? { vehicle_model_id: vehicleModel.id, vehicle_price: vehicleModel.price ?? null, payload: { vehicle_model: vehicleModelSummary } }
+          : {}),
       });
     }
 
@@ -728,7 +761,7 @@ export async function createNegotiationForClient(data: unknown) {
 const CreateQuickLeadSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, 'Nome é obrigatório'),
-  email: z.string().email('E-mail inválido'),
+  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   phone: z.string().regex(PHONE_REGEX, 'WhatsApp/Telefone inválido'),
 });
 

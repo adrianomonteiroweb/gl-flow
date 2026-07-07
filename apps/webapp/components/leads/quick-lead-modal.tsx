@@ -22,7 +22,7 @@ import { formatPhone } from '@/components/clients/client-form-schema';
 
 const QuickLeadSchema = z.object({
   name: z.string().min(1, 'Informe o nome'),
-  email: z.string().email('E-mail inválido'),
+  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   phone: z.string().refine(value => onlyNumbers(value).length >= 10, 'WhatsApp/Telefone inválido'),
 });
 
@@ -137,7 +137,7 @@ export const QuickLeadModal = () => {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>E-mail *</FormLabel>
+                  <FormLabel>E-mail</FormLabel>
                   <FormControl>
                     <Input {...field} type="email" placeholder="nome@email.com" />
                   </FormControl>

@@ -150,7 +150,7 @@ export const completeLeadEnrichmentTask = async (leadId: string) => {
     }
 
     const tasks = await TaskRepository.findAllByLead(leadId);
-    const target = tasks.find(t => t.title === ENRICHMENT_TASK_TITLE && !t.completed_at);
+    const target = tasks.find((t: any) => t.title === ENRICHMENT_TASK_TITLE && !t.completed_at);
 
     if (!target) {
       return { success: true as const };

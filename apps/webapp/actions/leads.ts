@@ -285,7 +285,7 @@ export async function updateLeadAddress(id: string, address: AddressData) {
   }
 }
 
-export async function updateLeadVehicleInterest(leadId: string, interested: boolean) {
+export async function updateLeadVehicleInterest(leadId: string, interested: boolean, clientIdParam?: string) {
   try {
     const me = await getMe();
 
@@ -300,11 +300,17 @@ export async function updateLeadVehicleInterest(leadId: string, interested: bool
     }
 
     const currentPayload = (lead.payload as Record<string, unknown>) ?? {};
-    let clientId = currentPayload.client_id as string | undefined;
+    let clientId = clientIdParam ?? (currentPayload.client_id as string | undefined);
     let client: Record<string, unknown> | null = null;
 
     if (interested) {
-      if (!clientId && lead.phone) {
+      if (clientId) {
+        const found = await ClientRepository.findById(clientId);
+
+        if (found) {
+          client = found as Record<string, unknown>;
+        }
+      } else if (lead.phone) {
         const workspaceId = lead.workspace_id ?? me.workspace_id;
 
         if (workspaceId) {
@@ -314,12 +320,6 @@ export async function updateLeadVehicleInterest(leadId: string, interested: bool
             client = found as Record<string, unknown>;
             clientId = found.id;
           }
-        }
-      } else if (clientId) {
-        const found = await ClientRepository.findById(clientId);
-
-        if (found) {
-          client = found as Record<string, unknown>;
         }
       }
     }

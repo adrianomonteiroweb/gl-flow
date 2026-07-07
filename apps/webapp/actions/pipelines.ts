@@ -129,7 +129,14 @@ export const getPipelines = async () => {
       return { success: false as const, error: auth.error };
     }
 
-    const data = await PipelineRepository.findAllByWorkspace(auth.workspaceId);
+    let data = await PipelineRepository.findAllByWorkspace(auth.workspaceId);
+
+    // If no pipelines exist, provision the default pipeline
+    if (!data || data.length === 0) {
+      const { provisionWorkspacePipeline } = await import('@workspace/db');
+      await provisionWorkspacePipeline(auth.workspaceId);
+      data = await PipelineRepository.findAllByWorkspace(auth.workspaceId);
+    }
 
     return { success: true as const, data };
   } catch (error: any) {

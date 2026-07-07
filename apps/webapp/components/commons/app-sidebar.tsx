@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type * as React from 'react';
-import { LayoutDashboardIcon, InboxIcon, UsersRoundIcon, SettingsIcon, UserPlusIcon } from 'lucide-react';
+import { LayoutDashboardIcon, InboxIcon, UsersRoundIcon, SettingsIcon, UserPlusIcon, BikeIcon } from 'lucide-react';
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@workspace/ui/components/sidebar';
 import { Separator } from '@workspace/ui/components/separator';
@@ -43,6 +43,7 @@ const data = {
       items: [
         { title: 'Usuários e Permissões', url: '/users' },
         { title: 'Pipelines e Etapas', url: '/settings/pipelines' },
+        { title: 'Catálogo de Veículos', icon: BikeIcon, url: '/catalog' },
       ],
     },
   ],

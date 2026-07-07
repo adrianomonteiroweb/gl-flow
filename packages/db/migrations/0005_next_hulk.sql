@@ -1,0 +1,2 @@
+ALTER TABLE "linharesflow"."vehicle_models" ADD COLUMN "condition" varchar(10) DEFAULT 'new' NOT NULL;--> statement-breakpoint
+CREATE INDEX "idx_vehicle_models_condition" ON "linharesflow"."vehicle_models" USING btree ("workspace_id","condition");

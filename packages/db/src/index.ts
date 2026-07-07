@@ -13,4 +13,5 @@ export * from './repositories/BranchRepository';
 export * from './repositories/ClientRepository';
 export * from './repositories/NegotiationRepository';
 export * from './repositories/VehicleRepository';
+export * from './repositories/VehicleModelRepository';
 export * from './repositories/NegotiationVehicleRepository';

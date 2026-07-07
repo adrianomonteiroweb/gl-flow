@@ -26,7 +26,7 @@ export type VehicleCondition = (typeof VEHICLE_CONDITIONS)[number];
 
 export const CONDITION_LABELS: Record<VehicleCondition, string> = {
   new: 'Novo (0km)',
-  used: 'Usado',
+  used: 'Seminovo',
 };
 
 export const CONDITION_OPTIONS = VEHICLE_CONDITIONS.map(v => ({

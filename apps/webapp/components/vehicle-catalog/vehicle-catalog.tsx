@@ -120,7 +120,7 @@ export const VehicleCatalog = () => {
             <Button type="button" className="gap-2" onClick={openCreate}>
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Novo veículo</span>
-              <span className="sm:hidden">Novo</span>
+              <span className="sm:hidden">Veículo</span>
             </Button>
           )}
         </div>
@@ -140,7 +140,7 @@ export const VehicleCatalog = () => {
           <span>Nenhum veículo cadastrado neste segmento.</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filtered.map(model => (
             <VehicleModelCard
               key={model.id}

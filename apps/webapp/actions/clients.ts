@@ -627,11 +627,22 @@ export async function createClient(data: unknown) {
   }
 }
 
+const ProposalInputSchema = z.object({
+  payment_method: z.enum(['avista', 'financiamento', 'consorcio']),
+  discount: z.number().min(0).optional(),
+  down_payment: z.number().min(0).optional(),
+  total: z.number().min(0).optional(),
+});
+
 const CreateNegotiationSchema = z.object({
   client_id: z.string().min(1, 'ID do cliente é obrigatório'),
   // Required in the "Nova Negociação" wizard (enforced in the UI). Optional here so
   // offline-queued negotiations — created without catalog access — can still sync.
   vehicle_model_id: z.string().min(1).optional(),
+  // Sent by the wizard when the commercial proposal is confirmed. When present the
+  // negotiation is created already in the "proposta" pipeline step; when absent the
+  // action keeps the legacy behavior (offline sync creates it in "prospeccao").
+  proposal: ProposalInputSchema.optional(),
 });
 
 export async function createNegotiationForClient(data: unknown) {
@@ -682,22 +693,45 @@ export async function createNegotiationForClient(data: unknown) {
       };
     }
 
+    let proposalPayload: Record<string, unknown> | null = null;
+
+    if (parsed.data.proposal) {
+      const p = parsed.data.proposal;
+      const price = vehicleModel ? Number(vehicleModel.price ?? 0) : 0;
+      const total = p.total ?? Math.max(price - (p.discount ?? 0), 0);
+      const down_payment = p.down_payment ?? null;
+      const financed_amount = down_payment !== null ? Math.max(total - down_payment, 0) : null;
+
+      proposalPayload = {
+        payment_method: p.payment_method,
+        price,
+        discount: p.discount ?? 0,
+        down_payment,
+        financed_amount,
+        total,
+        generated_at: new Date().toISOString(),
+      };
+    }
+
     const pipeline = await PipelineRepository.findDefaultByWorkspace(workspaceId);
 
     if (!pipeline) {
       return { success: false, message: 'Pipeline padrão não encontrado.' };
     }
 
-    const step = await StepRepository.findBySlug(workspaceId, 'prospeccao');
+    const stepSlug = proposalPayload ? 'proposta' : 'prospeccao';
+    const statusSlug = proposalPayload ? 'proposta_enviada' : 'novo';
+
+    const step = await StepRepository.findBySlug(workspaceId, stepSlug);
 
     if (!step) {
-      return { success: false, message: 'Etapa Prospecção não encontrada.' };
+      return { success: false, message: 'Etapa inicial não encontrada.' };
     }
 
-    const status = await StatusRepository.findBySlug(workspaceId, 'novo');
+    const status = await StatusRepository.findBySlug(workspaceId, statusSlug);
 
     if (!status) {
-      return { success: false, message: 'Status Novo não encontrado.' };
+      return { success: false, message: 'Status inicial não encontrado.' };
     }
 
     const lead = await LeadRepository.create({
@@ -714,6 +748,7 @@ export async function createNegotiationForClient(data: unknown) {
         client_id: client.id,
         vehicle_interest: !!vehicleModelSummary,
         ...(vehicleModelSummary ? { vehicle_model: vehicleModelSummary } : {}),
+        ...(proposalPayload ? { proposal: proposalPayload } : {}),
       },
     });
 
@@ -734,7 +769,14 @@ export async function createNegotiationForClient(data: unknown) {
         assignee_id: me.id,
         sort_order: 0,
         ...(vehicleModel
-          ? { vehicle_model_id: vehicleModel.id, vehicle_price: vehicleModel.price ?? null, payload: { vehicle_model: vehicleModelSummary } }
+          ? {
+              vehicle_model_id: vehicleModel.id,
+              vehicle_price: vehicleModel.price ?? null,
+              payload: { vehicle_model: vehicleModelSummary, ...(proposalPayload ? { proposal: proposalPayload } : {}) },
+            }
+          : {}),
+        ...(proposalPayload
+          ? { discount: String(proposalPayload.discount ?? 0), negotiation_value: String(proposalPayload.total ?? 0) }
           : {}),
       });
     }
@@ -748,6 +790,18 @@ export async function createNegotiationForClient(data: unknown) {
       actor_name: me.name,
       metadata: { origin: 'manual_negotiation', client_id: client.id },
     });
+
+    if (proposalPayload) {
+      LeadActivityLogger.log({
+        workspace_id: workspaceId,
+        lead_id: lead.id,
+        type: 'proposal_created',
+        actor_type: 'user',
+        actor_id: me.id,
+        actor_name: me.name,
+        metadata: { payment_method: proposalPayload.payment_method, total: proposalPayload.total },
+      });
+    }
 
     revalidatePath('/pipelines', 'layout');
 

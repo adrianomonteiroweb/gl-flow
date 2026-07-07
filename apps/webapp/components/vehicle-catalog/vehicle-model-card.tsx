@@ -72,16 +72,16 @@ export const VehicleModelCard = ({ model, selectable = false, selected = false, 
         )}
       </div>
 
-      <div className="flex h-28 items-center justify-center">
+      <div className="flex h-20 items-center justify-center sm:h-28">
         {model.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={model.image_url} alt={model.model} className="max-h-28 w-full object-contain" />
+          <img src={model.image_url} alt={model.model} className="max-h-20 w-full object-contain sm:max-h-28" />
         ) : (
-          <Bike className="h-12 w-12 text-muted-foreground/40" aria-hidden="true" />
+          <Bike className="h-10 w-10 text-muted-foreground/40 sm:h-12 sm:w-12" aria-hidden="true" />
         )}
       </div>
 
-      <div className="mt-2">
+      <div className="mt-1 sm:mt-2">
         <p className="text-sm font-semibold text-foreground">{model.model}</p>
         {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         <p className="mt-1 text-sm font-bold text-primary">{formatPrice(model.price)}</p>
@@ -91,7 +91,7 @@ export const VehicleModelCard = ({ model, selectable = false, selected = false, 
   );
 
   const baseClass = cn(
-    'relative flex flex-col rounded-xl border bg-card p-4 transition-colors',
+    'relative flex flex-col rounded-xl border bg-card p-2.5 transition-colors sm:p-4',
     selectable && 'cursor-pointer hover:border-primary/60',
     selected ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border',
     isInactive && 'opacity-70'

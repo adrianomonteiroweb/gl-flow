@@ -75,7 +75,7 @@ export type OfflineLeadStepItem = {
 
 export type QuickLeadPayload = {
   name: string;
-  email: string;
+  email?: string;
   phone: string;
 };
 

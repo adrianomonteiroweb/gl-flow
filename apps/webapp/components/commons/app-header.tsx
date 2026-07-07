@@ -79,7 +79,7 @@ export function AppHeader({ title = '', parents = [] }: PageProps) {
                 <Button type="button" size="sm" className="gap-1.5">
                   <Plus className="size-4" />
                   <span className="hidden sm:inline">Nova Negociação</span>
-                  <span className="sm:hidden">Nova</span>
+                  <span className="sm:hidden">Negociação</span>
                 </Button>
               }
             />

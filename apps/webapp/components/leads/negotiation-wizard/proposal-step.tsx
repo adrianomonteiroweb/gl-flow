@@ -10,7 +10,6 @@ import type { VehicleModel } from '@/components/vehicle-catalog/types';
 
 import { SelectableCard } from './selectable-card';
 import { ProposalSummary, type SummaryRow } from './proposal-summary';
-import { WizardFooter } from './wizard-footer';
 import { DOWN_PAYMENT_PCT, vehiclePriceToNumber, type PaymentMethod } from './types';
 
 const METHODS: { value: PaymentMethod; title: string; subtitle: string; icon: typeof Banknote }[] = [
@@ -53,14 +52,9 @@ export const ProposalStep = ({ vehicle, paymentMethod, onSelectMethod, onBack, o
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-foreground">Proposta Comercial</h3>
-        <p className="text-sm text-muted-foreground">Monte a proposta e selecione a forma de pagamento</p>
-      </div>
-
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Forma de Pagamento</p>
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
           {METHODS.map(method => (
             <SelectableCard
               key={method.value}
@@ -76,35 +70,29 @@ export const ProposalStep = ({ vehicle, paymentMethod, onSelectMethod, onBack, o
 
       <ProposalSummary title="Resumo da Proposta" rows={rows} total={{ label: 'Total', value: formatCurrency(price) }} />
 
-      <WizardFooter
-        left={
-          <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-        }
-        right={
-          <>
-            <Button type="button" variant="outline" onClick={onGeneratePdf} disabled={isSubmitting} className="gap-1.5">
-              <FileText className="h-4 w-4" />
-              Gerar PDF
-            </Button>
-            <Button type="button" onClick={onContinue} disabled={!paymentMethod || isSubmitting} className="gap-1.5">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  Continuar
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </>
-        }
-      />
+      <div className="sticky bottom-0 z-10 -mx-6 mt-4 flex flex-wrap gap-1.5 border-t bg-background px-6 py-2 sm:static sm:mt-6 sm:flex-nowrap sm:gap-2 sm:bg-transparent sm:px-0 sm:py-0 sm:pt-6">
+        <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting} className="flex-1 gap-1.5 sm:flex-none">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
+        <Button type="button" variant="outline" onClick={onGeneratePdf} disabled={isSubmitting} className="flex-1 gap-1.5 sm:flex-none">
+          <FileText className="h-4 w-4" />
+          Gerar PDF
+        </Button>
+        <Button type="button" onClick={onContinue} disabled={!paymentMethod || isSubmitting} className="flex-1 gap-1.5 sm:flex-none">
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processando...
+            </>
+          ) : (
+            <>
+              Continuar
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 };

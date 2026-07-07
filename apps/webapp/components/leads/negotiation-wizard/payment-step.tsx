@@ -14,7 +14,6 @@ import type { VehicleModel } from '@/components/vehicle-catalog/types';
 
 import { SelectableCard } from './selectable-card';
 import { ProposalSummary, type SummaryRow } from './proposal-summary';
-import { WizardFooter } from './wizard-footer';
 import { DOWN_PAYMENT_PCT, MAX_INSTALLMENTS, vehiclePriceToNumber, type PaymentChannel, type PaymentEntry } from './types';
 
 export type ChargeInput = {
@@ -56,9 +55,22 @@ const formatCardNumber = (raw: string): string =>
     .slice(0, 16)
     .replace(/(\d{4})(?=\d)/g, '$1 ');
 
-const formatExpiry = (raw: string): string => onlyNumbers(raw).slice(0, 4).replace(/(\d{2})(?=\d)/, '$1/');
+const formatExpiry = (raw: string): string =>
+  onlyNumbers(raw)
+    .slice(0, 4)
+    .replace(/(\d{2})(?=\d)/, '$1/');
 
-export const PaymentStep = ({ vehicle, clientName, paymentMethod, payments, onBack, onContinue, onCharge, onSimulate, isSubmitting }: PaymentStepProps) => {
+export const PaymentStep = ({
+  vehicle,
+  clientName,
+  paymentMethod,
+  payments,
+  onBack,
+  onContinue,
+  onCharge,
+  onSimulate,
+  isSubmitting,
+}: PaymentStepProps) => {
   const [channel, setChannel] = useState<PaymentChannel>('card');
   const [cardBrand, setCardBrand] = useState('VISA');
   const [cardNumber, setCardNumber] = useState('');
@@ -106,15 +118,8 @@ export const PaymentStep = ({ vehicle, clientName, paymentMethod, payments, onBa
     rows.push({ label: 'Saldo a financiar', value: formatCurrency(price - downPayment) });
   }
 
-  const subtitle = paymentMethod === 'financiamento' ? 'Receba a entrada do financiamento via PIX, cartão ou transferência' : 'Receba o pagamento via PIX, cartão ou transferência';
-
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-foreground">Pagamentos</h3>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
-      </div>
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Coluna de cobrança */}
         <div className="space-y-4">
@@ -126,9 +131,16 @@ export const PaymentStep = ({ vehicle, clientName, paymentMethod, payments, onBa
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
             {CHANNELS.map(item => (
-              <SelectableCard key={item.value} icon={item.icon} title={item.title} subtitle={item.subtitle} selected={channel === item.value} onSelect={() => setChannel(item.value)} />
+              <SelectableCard
+                key={item.value}
+                icon={item.icon}
+                title={item.title}
+                subtitle={item.subtitle}
+                selected={channel === item.value}
+                onSelect={() => setChannel(item.value)}
+              />
             ))}
           </div>
 
@@ -150,9 +162,19 @@ export const PaymentStep = ({ vehicle, clientName, paymentMethod, payments, onBa
                   </button>
                 ))}
               </div>
-              <Input inputMode="numeric" placeholder="0000 0000 0000 0000" value={cardNumber} onChange={e => setCardNumber(formatCardNumber(e.target.value))} />
+              <Input
+                inputMode="numeric"
+                placeholder="0000 0000 0000 0000"
+                value={cardNumber}
+                onChange={e => setCardNumber(formatCardNumber(e.target.value))}
+              />
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                <Input placeholder="NOME NO CARTÃO" value={cardName} onChange={e => setCardName(e.target.value.toUpperCase())} className="col-span-2 sm:col-span-1" />
+                <Input
+                  placeholder="NOME NO CARTÃO"
+                  value={cardName}
+                  onChange={e => setCardName(e.target.value.toUpperCase())}
+                  className="col-span-2 sm:col-span-1"
+                />
                 <Input inputMode="numeric" placeholder="MM/AA" value={cardExpiry} onChange={e => setCardExpiry(formatExpiry(e.target.value))} />
                 <Input inputMode="numeric" placeholder="CVV" value={cardCvv} onChange={e => setCardCvv(onlyNumbers(e.target.value).slice(0, 4))} />
               </div>
@@ -161,7 +183,12 @@ export const PaymentStep = ({ vehicle, clientName, paymentMethod, payments, onBa
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Valor a cobrar</label>
-            <Input inputMode="numeric" placeholder={formatCurrency(remaining)} value={amountInput} onChange={e => setAmountInput(formatCurrencyInput(e.target.value))} />
+            <Input
+              inputMode="numeric"
+              placeholder={formatCurrency(remaining)}
+              value={amountInput}
+              onChange={e => setAmountInput(formatCurrencyInput(e.target.value))}
+            />
           </div>
 
           {channel === 'card' && (
@@ -201,7 +228,9 @@ export const PaymentStep = ({ vehicle, clientName, paymentMethod, payments, onBa
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">Histórico de Pagamentos</p>
             {payments.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">Nenhum pagamento registrado ainda.</p>
+              <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                Nenhum pagamento registrado ainda.
+              </p>
             ) : (
               <ul className="space-y-2">
                 {payments.map(entry => {
@@ -223,7 +252,10 @@ export const PaymentStep = ({ vehicle, clientName, paymentMethod, payments, onBa
                           {entry.installments > 1 ? ` · ${entry.installments}x sem juros` : ''}
                         </p>
                       </div>
-                      <span className={cn('shrink-0 text-sm font-semibold', paid ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>+ {formatCurrency(entry.amount)}</span>
+                      <span
+                        className={cn('shrink-0 text-sm font-semibold', paid ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>
+                        + {formatCurrency(entry.amount)}
+                      </span>
                     </li>
                   );
                 })}
@@ -247,26 +279,25 @@ export const PaymentStep = ({ vehicle, clientName, paymentMethod, payments, onBa
         </div>
       </div>
 
-      <WizardFooter
-        left={
-          <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-        }
-        right={
-          <>
-            <Button type="button" variant="outline" onClick={() => onSimulate(buildInput())} disabled={amount <= 0 || isSubmitting} className="gap-1.5">
-              <CheckCircle2 className="h-4 w-4" />
-              Simular Pagamento
-            </Button>
-            <Button type="button" onClick={onContinue} disabled={isSubmitting} className="gap-1.5">
-              Continuar
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </>
-        }
-      />
+      <div className="sticky bottom-0 z-10 -mx-6 mt-4 flex flex-wrap gap-1.5 border-t bg-background px-6 py-2 sm:static sm:mt-6 sm:flex-nowrap sm:gap-2 sm:bg-transparent sm:px-0 sm:py-0 sm:pt-6">
+        <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting} className="flex-1 gap-1.5 sm:flex-none">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onSimulate(buildInput())}
+          disabled={amount <= 0 || isSubmitting}
+          className="flex-1 gap-1.5 sm:flex-none">
+          <CheckCircle2 className="h-4 w-4" />
+          Simular Pagamento
+        </Button>
+        <Button type="button" onClick={onContinue} disabled={isSubmitting} className="flex-1 gap-1.5 sm:flex-none">
+          Continuar
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };

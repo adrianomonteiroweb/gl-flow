@@ -36,6 +36,7 @@ export const QuickLeadModal = () => {
   const { user, loading } = useSessionContext();
   const { is_online, addQuickLeadToQueue } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
+  const [formKey, setFormKey] = useState(0);
   const opened_ref = useRef(false);
 
   const form = useForm<QuickLeadValues>({
@@ -72,14 +73,17 @@ export const QuickLeadModal = () => {
     }
   };
 
-  // Clears the form and refocuses the first field so the user can register the
-  // next lead in sequence without reopening the modal.
+  // Forces a remount of the Form subtree so RHF state is guaranteed clean,
+  // avoiding the race between reset() and handleSubmit's own reconciliation.
   const readyForNext = () => {
-    setTimeout(() => {
-      form.reset(DEFAULT_VALUES);
-      form.setFocus('name');
-    }, 0);
+    setFormKey(k => k + 1);
   };
+
+  useEffect(() => {
+    if (formKey > 0) {
+      form.setFocus('name');
+    }
+  }, [formKey]);
 
   const handleClearFields = () => {
     form.reset(DEFAULT_VALUES);
@@ -124,7 +128,7 @@ export const QuickLeadModal = () => {
           </div>
         )}
 
-        <Form {...form}>
+        <Form key={formKey} {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}

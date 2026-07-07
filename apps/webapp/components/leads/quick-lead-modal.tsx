@@ -14,6 +14,7 @@ import { Input } from '@workspace/ui/components/input';
 import { Button } from '@workspace/ui/components/button';
 import { SubmitButton } from '@workspace/ui/components/submit-button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@workspace/ui/components/form';
+import { RotateCcw } from 'lucide-react';
 
 import { createQuickLead } from '@/actions/clients';
 import { useSessionContext } from '@/contexts/session';
@@ -74,6 +75,13 @@ export const QuickLeadModal = () => {
   // Clears the form and refocuses the first field so the user can register the
   // next lead in sequence without reopening the modal.
   const readyForNext = () => {
+    setTimeout(() => {
+      form.reset(DEFAULT_VALUES);
+      form.setFocus('name');
+    }, 0);
+  };
+
+  const handleClearFields = () => {
     form.reset(DEFAULT_VALUES);
     form.setFocus('name');
   };
@@ -160,7 +168,12 @@ export const QuickLeadModal = () => {
               )}
             />
 
-            <DialogFooter>
+            <DialogFooter className="flex flex-row justify-between gap-2">
+              <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={handleClearFields}>
+                <RotateCcw className="h-4 w-4" />
+                Limpar
+              </Button>
+              <div className="flex-1" />
               <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
                 Cancelar
               </Button>

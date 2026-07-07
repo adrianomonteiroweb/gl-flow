@@ -8,8 +8,6 @@ import { cn } from '@workspace/ui/lib/utils';
 
 import { getToneClasses } from '@/lib/tone-colors';
 
-import { WizardFooter } from './wizard-footer';
-
 const STEPS: { title: string; detail: string; meta: string | null }[] = [
   { title: 'Proposta gerada', detail: 'Proposta comercial criada e validada automaticamente', meta: 'Automático' },
   { title: 'Validação de dados', detail: 'CPF, endereço e documentação verificados na base unificada', meta: 'Automático' },
@@ -82,27 +80,23 @@ export const ApprovalStep = ({ status, onBack, onSimulate, onContinue, isSubmitt
         })}
       </ol>
 
-      <WizardFooter
-        left={
-          <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
+      <div className="sticky bottom-0 z-10 -mx-6 mt-4 flex items-center justify-between gap-1.5 border-t bg-background px-6 py-2 sm:static sm:mt-6 sm:gap-2 sm:bg-transparent sm:px-0 sm:py-0 sm:pt-6">
+        <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting} className="gap-1.5">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
+        {approved ? (
+          <Button type="button" onClick={onContinue} disabled={isSubmitting} className="gap-1.5">
+            Continuar
+            <ArrowRight className="h-4 w-4" />
           </Button>
-        }
-        right={
-          approved ? (
-            <Button type="button" onClick={onContinue} disabled={isSubmitting} className="gap-1.5">
-              Continuar
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button type="button" onClick={onSimulate} disabled={isSubmitting} className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700">
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              Simular Aprovação
-            </Button>
-          )
-        }
-      />
+        ) : (
+          <Button type="button" onClick={onSimulate} disabled={isSubmitting} className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700">
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+            Simular Aprovação
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

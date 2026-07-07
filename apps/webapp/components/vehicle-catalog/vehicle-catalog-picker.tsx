@@ -59,7 +59,7 @@ export const VehicleCatalogPicker = ({ selectedId, onSelect }: VehicleCatalogPic
         <p className="text-sm text-muted-foreground">Selecione o modelo Honda</p>
       </div>
 
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-none sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0" style={{ maskImage: 'linear-gradient(to right, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent)' }}>
+      <div className="-mx-1 flex flex-wrap gap-1.5 px-1 pb-1 sm:gap-2 sm:pb-0">
         {conditionOptions.map(option => (
           <button
             key={`c-${option.value}`}

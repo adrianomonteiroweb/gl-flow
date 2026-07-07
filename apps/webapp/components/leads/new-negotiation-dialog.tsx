@@ -415,7 +415,7 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
         <DialogContent className={cn('flex max-h-[90vh] flex-col gap-0 overflow-hidden', STEP_WIDTH[step])}>
-          <div className="shrink-0 space-y-3 px-6 pb-2 pt-6">
+          <div className="shrink-0 space-y-2.5 px-6 pb-2 pt-4 sm:space-y-3 sm:pt-6">
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-primary/10 p-1.5 sm:p-2">
                 <Zap className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
@@ -428,7 +428,7 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
             <StepIndicator step={step} />
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 pb-2">
+          <div className="flex-1 overflow-y-auto px-6 pb-1">
 
             {step === 'client' && (
               <div className="space-y-4">
@@ -636,7 +636,7 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
           </div>
 
           {isClientOrVehicle && (
-            <div className="shrink-0 border-t px-6 py-4">
+            <div className="shrink-0 border-t px-6 py-2 sm:py-4">
               <div className="flex items-center justify-between gap-2">
                 <Button type="button" variant="outline" className="gap-1.5" onClick={() => (step === 'vehicle' ? setStep('client') : setOpen(false))} disabled={isSubmitting}>
                   <ArrowLeft className="h-4 w-4" />

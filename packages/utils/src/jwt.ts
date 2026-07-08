@@ -15,7 +15,7 @@ export function createJWT(user: any) {
     },
     tokenKey,
     {
-      expiresIn: 262800 * 60, // 6 months in seconds
+      expiresIn: 60 * 60 * 24, // 24 hours in seconds
       algorithm: 'HS256',
     }
   );

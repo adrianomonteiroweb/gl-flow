@@ -39,7 +39,13 @@ export const StepIndicator = ({ step }: { step: WizardStep }) => {
             {active + 1}/{total}
           </span>
         </div>
-        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-valuenow={active + 1}
+          aria-label={`Etapa ${active + 1} de ${total}: ${NODES[active]?.label}`}
+          className="h-1 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((active + 1) / total) * 100}%` }} />
         </div>
       </div>

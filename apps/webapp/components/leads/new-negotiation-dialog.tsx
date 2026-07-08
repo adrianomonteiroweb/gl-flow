@@ -7,8 +7,9 @@ import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Receipt, S
 import { cpfOrCnpj } from '@workspace/utils/text';
 import { Badge } from '@workspace/ui/components/badge';
 import { Button } from '@workspace/ui/components/button';
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@workspace/ui/components/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@workspace/ui/components/dialog';
 import { Input } from '@workspace/ui/components/input';
+import { useIsMobile } from '@workspace/ui/hooks/use-mobile';
 import { cn } from '@workspace/ui/lib/utils';
 
 import { getClients, createNegotiationForClient } from '@/actions/clients';
@@ -51,6 +52,7 @@ interface NewNegotiationDialogProps {
 
 export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlledOpen, onOpenChange: controlledOnOpenChange, onCreated }: NewNegotiationDialogProps) => {
   const { is_online, addNegotiationToQueue } = useOfflineSyncContext();
+  const is_mobile = useIsMobile();
 
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
@@ -414,7 +416,7 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
       <Dialog open={open} onOpenChange={setOpen}>
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
-        <DialogContent className={cn('flex max-h-[90vh] flex-col gap-0 overflow-hidden', STEP_WIDTH[step])}>
+        <DialogContent className={cn('flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0', STEP_WIDTH[step])}>
           <div className="shrink-0 space-y-2.5 px-6 pb-2 pt-4 sm:space-y-3 sm:pt-6">
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-primary/10 p-1.5 sm:p-2">
@@ -422,13 +424,13 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
               </div>
               <div>
                 <DialogTitle className="text-base font-semibold sm:text-lg">Nova Negociação</DialogTitle>
-                <p className="text-[11px] text-muted-foreground sm:text-xs">Fluxo comercial guiado</p>
+                <DialogDescription className="text-[11px] text-muted-foreground sm:text-xs">Fluxo comercial guiado</DialogDescription>
               </div>
             </div>
             <StepIndicator step={step} />
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 pb-1">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-1">
 
             {step === 'client' && (
               <div className="space-y-4">
@@ -461,7 +463,7 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
                       <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Buscar cliente</label>
                       <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)} placeholder="Nome, CPF/CNPJ ou telefone..." className="h-10 pl-10" autoFocus />
+                        <Input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)} placeholder="Nome, CPF/CNPJ ou telefone..." className="h-10 pl-10" autoFocus={!is_mobile} />
                       </div>
                     </div>
 

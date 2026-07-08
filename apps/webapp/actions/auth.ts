@@ -184,11 +184,12 @@ export async function verifyLoginCode(email: string, code: string) {
     delete metadata.login_code;
     await UserRepository.update(user.id, { metadata });
 
-    const { access_token } = createJWT(user);
+    const { access_token, expires } = createJWT(user);
 
     (await cookies()).set({
       name: COOKIE_KEY,
       value: Buffer.from(access_token).toString('base64'),
+      expires,
       ...cookieOptions,
     });
 

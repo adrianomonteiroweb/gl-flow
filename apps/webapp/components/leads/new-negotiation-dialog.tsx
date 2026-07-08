@@ -430,7 +430,7 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
             <StepIndicator step={step} />
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-1">
+          <div className="min-h-0 flex-auto overflow-y-auto px-6 pb-1">
 
             {step === 'client' && (
               <div className="space-y-4">
@@ -485,7 +485,7 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
                       )}
 
                       {!isSearching && clients.length > 0 && (
-                        <div className="max-h-[320px] space-y-2 overflow-y-auto pr-2">
+                        <div className="space-y-2 pr-2 sm:max-h-[320px] sm:overflow-y-auto">
                           {clients.map(client => (
                             <button
                               key={client.id}

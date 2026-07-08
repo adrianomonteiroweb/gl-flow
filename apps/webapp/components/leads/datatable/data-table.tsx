@@ -1,12 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Datatable } from '@workspace/ui/components/datatable';
 import { useSearchParams } from '@/hooks/use-search-params';
 import useServerPaginationTable from '@/hooks/use-server-pagination-table';
 import { getLeads } from '@/actions/leads';
+import { LeadDetailsSurface } from '@/components/leads/lead-details-surface';
 
 import { createColumns } from './columns';
 import { DataTableToolbar } from './data-table-toolbar';
@@ -21,9 +21,23 @@ export function LeadsDataTable({ loadedAt, pipelineIds }: LeadsDataTableProps) {
   const [loading, setLoading] = useState(false);
   const { params } = useSearchParams();
 
-  const router = useRouter();
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsTab, setDetailsTab] = useState<string | undefined>(undefined);
 
-  const columns = useMemo(() => createColumns(loadedAt), [loadedAt]);
+  const openDetails = useCallback((row: any, tab?: string): void => {
+    const chatId = row?.chat?.id;
+
+    if (chatId) {
+      sessionStorage.setItem(`leads-read-${chatId}`, new Date().toISOString());
+    }
+
+    setSelectedLead(row);
+    setDetailsTab(tab);
+    setDetailsOpen(true);
+  }, []);
+
+  const columns = useMemo(() => createColumns(loadedAt, row => openDetails(row, 'tasks')), [loadedAt, openDetails]);
 
   const q = params.q || '';
   const page = Number(params.page) || 1;
@@ -51,12 +65,7 @@ export function LeadsDataTable({ loadedAt, pipelineIds }: LeadsDataTableProps) {
   }, [fetchData]);
 
   const handleRowClick = (row: any): void => {
-    const chatId = row.chat?.id;
-
-    if (chatId) {
-      sessionStorage.setItem(`leads-read-${chatId}`, new Date().toISOString());
-      router.push(`/chats/${chatId}`);
-    }
+    openDetails(row);
   };
 
   const { table, handlePageChange, handlePageSizeChange } = useServerPaginationTable({
@@ -76,6 +85,8 @@ export function LeadsDataTable({ loadedAt, pipelineIds }: LeadsDataTableProps) {
         emptyMessage="Nenhum lead encontrado."
       />
       <Datatable.Pagination table={table} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
+
+      <LeadDetailsSurface item={selectedLead} tab={detailsTab} open={detailsOpen} onOpenChange={setDetailsOpen} />
     </div>
   );
 }

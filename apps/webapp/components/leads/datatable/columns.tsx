@@ -14,7 +14,7 @@ const alertIconMap: Record<LeadTaskAlertIcon, LucideIcon> = {
   check: Check,
 };
 
-export const createColumns = (loadedAt: string): any[] => [
+export const createColumns = (loadedAt: string, onOpenTasks?: (row: any) => void): any[] => [
   {
     accessorKey: 'name',
     header: <span className="font-bold">Nome</span>,
@@ -35,18 +35,16 @@ export const createColumns = (loadedAt: string): any[] => [
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <a
-                      href={chatId ? `/chats/${chatId}?tab=tasks` : '#'}
+                    <button
+                      type="button"
                       className={`flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0 ${taskAlertConfig.circleClass}`}
                       aria-label={taskAlertConfig.label}
                       onClick={e => {
                         e.stopPropagation();
-                        if (chatId) {
-                          sessionStorage.setItem(`leads-read-${chatId}`, new Date().toISOString());
-                        }
+                        onOpenTasks?.(row.original);
                       }}>
                       <Icon className="w-3.5 h-3.5" />
-                    </a>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="top">{taskAlertConfig.label}</TooltipContent>
                 </Tooltip>

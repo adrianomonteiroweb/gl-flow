@@ -44,27 +44,25 @@ export const StepIndicator = ({ step }: { step: WizardStep }) => {
         </div>
       </div>
 
-      <div className="hidden items-center sm:flex">
+      <div className="hidden flex-wrap items-center gap-2 sm:flex lg:gap-3">
         {NODES.map((node, index) => {
           const done = index < active;
           const current = index === active;
 
           return (
-            <div key={node.label} className={cn('flex items-center', index < total - 1 && 'flex-1')}>
-              <div className="flex items-center gap-2">
-                <div
-                  aria-current={current ? 'step' : undefined}
-                  className={cn(
-                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium',
-                    done && 'bg-emerald-500 text-white dark:bg-emerald-600',
-                    current && 'bg-primary text-primary-foreground',
-                    !done && !current && 'bg-muted text-muted-foreground'
-                  )}>
-                  {done ? <Check className="h-4 w-4" /> : index + 1}
-                </div>
-                <span className={cn('hidden text-xs font-medium lg:inline', current ? 'text-foreground' : 'text-muted-foreground')}>{node.label}</span>
+            <div key={node.label} className="flex items-center gap-1.5">
+              <div
+                aria-current={current ? 'step' : undefined}
+                className={cn(
+                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium',
+                  done && 'bg-emerald-500 text-white dark:bg-emerald-600',
+                  current && 'bg-primary text-primary-foreground',
+                  !done && !current && 'bg-muted text-muted-foreground'
+                )}>
+                {done ? <Check className="h-4 w-4" /> : index + 1}
               </div>
-              {index < total - 1 && <div className={cn('mx-1.5 h-0.5 flex-1 rounded-full lg:mx-2', done ? 'bg-emerald-500 dark:bg-emerald-600' : 'bg-muted')} />}
+              <span className={cn('text-xs font-medium', current ? 'text-foreground' : 'text-muted-foreground')}>{node.label}</span>
+              {index < total - 1 && <div className={cn('hidden h-0.5 w-2 rounded-full lg:block', done ? 'bg-emerald-500 dark:bg-emerald-600' : 'bg-muted')} />}
             </div>
           );
         })}

@@ -657,13 +657,13 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
       </Dialog>
 
       <Dialog open={clientDialogOpen} onOpenChange={setClientDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[680px]">
+        <DialogContent className="max-h-[90vh] flex flex-col gap-0 overflow-hidden p-0 sm:max-w-[680px]">
           <ClientDialogForm onSubmit={handleClientCreated} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={completeOpen} onOpenChange={handleCompleteOpenChange}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[680px]">
+        <DialogContent className="max-h-[90vh] flex flex-col gap-0 overflow-hidden p-0 sm:max-w-[680px]">
           {pendingQuickClient && (
             <ClientEditForm
               key={formKey}

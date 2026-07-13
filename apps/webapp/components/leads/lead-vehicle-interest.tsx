@@ -208,7 +208,7 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadNam
         ))}
 
       <Dialog open={editOpen} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[680px]">
+        <DialogContent className="max-h-[90vh] flex flex-col gap-0 overflow-hidden p-0 sm:max-w-[680px]">
           {client && (
             <ClientEditForm
               key={formKey}
@@ -225,7 +225,7 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadNam
       </Dialog>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[680px]">
+        <DialogContent className="max-h-[90vh] flex flex-col gap-0 overflow-hidden p-0 sm:max-w-[680px]">
           <ClientDialogForm
             onSubmit={handleClientCreated}
             initialValues={{

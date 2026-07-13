@@ -43,7 +43,7 @@ export function EditClientButton({ client }: any) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[680px] max-h-[90vh] flex flex-col gap-0 overflow-hidden p-0">
         <ClientEditForm
           key={formKey}
           client={client}

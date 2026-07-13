@@ -15,13 +15,17 @@ const VehicleModelSchema = z.object({
   make: z.string().max(100).optional(),
   model: z.string().min(1, 'Modelo é obrigatório').max(150, 'Modelo muito longo'),
   version: z.string().max(150).optional().nullable(),
-  segment: z.enum(VEHICLE_SEGMENTS, { errorMap: () => ({ message: 'Segmento inválido' }) }),
+  segment: z.enum(VEHICLE_SEGMENTS, { errorMap: () => ({ message: 'Segmento inválido' }) }).default('street'),
   condition: z.enum(VEHICLE_CONDITIONS, { errorMap: () => ({ message: 'Condição inválida' }) }).default('new'),
   model_year: z.coerce.number().int().min(1900).max(2100).optional().nullable(),
   manufacture_year: z.coerce.number().int().min(1900).max(2100).optional().nullable(),
   price: z.coerce.number().positive('Informe um preço válido'),
   image_url: z.string().max(500).optional().nullable(),
   is_active: z.boolean().optional(),
+  mileage: z.coerce.number().int().min(0).optional().nullable(),
+  chassi: z.string().max(17).optional().nullable(),
+  color: z.string().max(50).optional().nullable(),
+  stock_entry_date: z.string().optional().nullable(),
 });
 
 const UpdateVehicleModelSchema = VehicleModelSchema.partial();
@@ -117,19 +121,40 @@ export const createVehicleModel = async (input: unknown) => {
     const existing = await VehicleModelRepository.findAllByWorkspace(auth.workspaceId);
     const nextOrder = existing.reduce((max: number, m: any) => Math.max(max, Number(m.sort_order) || 0), 0) + 1;
 
+    const { mileage, chassi, color, stock_entry_date, ...columns } = parsed.data;
+
+    const vehiclePayload: Record<string, unknown> = {};
+
+    if (mileage !== undefined && mileage !== null) {
+      vehiclePayload.mileage = mileage;
+    }
+
+    if (chassi) {
+      vehiclePayload.chassi = chassi.trim().toUpperCase();
+    }
+
+    if (color) {
+      vehiclePayload.color = color.trim();
+    }
+
+    if (stock_entry_date) {
+      vehiclePayload.stock_entry_date = stock_entry_date;
+    }
+
     const data = await VehicleModelRepository.create({
       workspace_id: auth.workspaceId,
-      make: parsed.data.make?.trim() || 'Honda',
-      model: parsed.data.model.trim(),
-      version: parsed.data.version?.trim() || null,
-      segment: parsed.data.segment,
-      condition: parsed.data.condition,
-      model_year: parsed.data.model_year ?? null,
-      manufacture_year: parsed.data.manufacture_year ?? null,
-      price: String(parsed.data.price),
-      image_url: parsed.data.image_url?.trim() || null,
-      is_active: parsed.data.is_active ?? true,
+      make: columns.make?.trim() || 'Honda',
+      model: columns.model.trim(),
+      version: columns.version?.trim() || null,
+      segment: columns.segment,
+      condition: columns.condition,
+      model_year: columns.model_year ?? null,
+      manufacture_year: columns.manufacture_year ?? null,
+      price: String(columns.price),
+      image_url: columns.image_url?.trim() || null,
+      is_active: columns.is_active ?? true,
       sort_order: nextOrder,
+      payload: Object.keys(vehiclePayload).length > 0 ? vehiclePayload : null,
     });
 
     revalidatePath('/catalog');
@@ -161,46 +186,70 @@ export const updateVehicleModel = async (id: string, input: unknown) => {
       return { success: false as const, error: parsed.error.errors[0]?.message ?? 'Dados inválidos' };
     }
 
+    const { mileage, chassi, color, stock_entry_date, ...columnFields } = parsed.data;
     const updateData: Record<string, unknown> = {};
 
-    if (parsed.data.make !== undefined) {
-      updateData.make = parsed.data.make?.trim() || 'Honda';
+    if (columnFields.make !== undefined) {
+      updateData.make = columnFields.make?.trim() || 'Honda';
     }
 
-    if (parsed.data.model !== undefined) {
-      updateData.model = parsed.data.model.trim();
+    if (columnFields.model !== undefined) {
+      updateData.model = columnFields.model.trim();
     }
 
-    if (parsed.data.version !== undefined) {
-      updateData.version = parsed.data.version?.trim() || null;
+    if (columnFields.version !== undefined) {
+      updateData.version = columnFields.version?.trim() || null;
     }
 
-    if (parsed.data.segment !== undefined) {
-      updateData.segment = parsed.data.segment;
+    if (columnFields.segment !== undefined) {
+      updateData.segment = columnFields.segment;
     }
 
-    if (parsed.data.condition !== undefined) {
-      updateData.condition = parsed.data.condition;
+    if (columnFields.condition !== undefined) {
+      updateData.condition = columnFields.condition;
     }
 
-    if (parsed.data.model_year !== undefined) {
-      updateData.model_year = parsed.data.model_year ?? null;
+    if (columnFields.model_year !== undefined) {
+      updateData.model_year = columnFields.model_year ?? null;
     }
 
-    if (parsed.data.manufacture_year !== undefined) {
-      updateData.manufacture_year = parsed.data.manufacture_year ?? null;
+    if (columnFields.manufacture_year !== undefined) {
+      updateData.manufacture_year = columnFields.manufacture_year ?? null;
     }
 
-    if (parsed.data.price !== undefined) {
-      updateData.price = String(parsed.data.price);
+    if (columnFields.price !== undefined) {
+      updateData.price = String(columnFields.price);
     }
 
-    if (parsed.data.image_url !== undefined) {
-      updateData.image_url = parsed.data.image_url?.trim() || null;
+    if (columnFields.image_url !== undefined) {
+      updateData.image_url = columnFields.image_url?.trim() || null;
     }
 
-    if (parsed.data.is_active !== undefined) {
-      updateData.is_active = parsed.data.is_active;
+    if (columnFields.is_active !== undefined) {
+      updateData.is_active = columnFields.is_active;
+    }
+
+    const payloadFields: Record<string, unknown> = {};
+
+    if (mileage !== undefined) {
+      payloadFields.mileage = mileage;
+    }
+
+    if (chassi !== undefined) {
+      payloadFields.chassi = chassi ? chassi.trim().toUpperCase() : null;
+    }
+
+    if (color !== undefined) {
+      payloadFields.color = color ? color.trim() : null;
+    }
+
+    if (stock_entry_date !== undefined) {
+      payloadFields.stock_entry_date = stock_entry_date || null;
+    }
+
+    if (Object.keys(payloadFields).length > 0) {
+      const existingPayload = (model.payload as Record<string, unknown>) ?? {};
+      updateData.payload = { ...existingPayload, ...payloadFields };
     }
 
     if (Object.keys(updateData).length === 0) {

@@ -332,124 +332,128 @@ export const ClientDialogForm = ({ onSubmit = () => {}, initialValues }: { onSub
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleValid, handleInvalid)}>
-        <DialogHeader>
-          <DialogTitle>Identificação do Cliente</DialogTitle>
-        </DialogHeader>
-
-        {!is_online && (
-          <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400">
-            <WifiOff size={13} className="shrink-0" aria-hidden="true" />
-            <span>Sem conexão — dados serão salvos localmente e sincronizados ao reconectar</span>
-          </div>
-        )}
-
-        {is_existing && (
-          <Alert className="mt-4 border-blue-200 bg-blue-50 text-blue-800">
-            <UserCheck className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between gap-3">
-              <span>
-                {isEditingExisting
-                  ? 'Editando um cliente já cadastrado. Altere os campos desejados e salve.'
-                  : 'Cliente já cadastrado.'}
-              </span>
-              {!isEditingExisting && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() => setIsEditingExisting(true)}
-                >
-                  <Pencil className="mr-1 h-3.5 w-3.5" />
-                  Editar dados
-                </Button>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {documentStatus === 'enriched' && (
-          <Alert className="mt-4 border-emerald-200 bg-emerald-50 text-emerald-800">
-            <UserCheck className="h-4 w-4" />
-            <AlertDescription>Dados preenchidos automaticamente. Revise e complete os campos.</AlertDescription>
-          </Alert>
-        )}
-
-        {documentStatus === 'not-found' && digits.length >= 11 && (
-          <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-800">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>Nenhum dado encontrado. Preencha os campos manualmente.</AlertDescription>
-          </Alert>
-        )}
-
-        {documentStatus === 'error' && (
-          <Alert className="mt-4 border-red-200 bg-red-50 text-red-800">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>Erro ao buscar dados. Preencha os campos manualmente.</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="mt-6 space-y-4">
-          <FormField
-            control={form.control}
-            name="personType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo de documento *</FormLabel>
-                <Select
-                  value={(field.value as string) ?? 'pf'}
-                  onValueChange={value => switchPersonType(value as 'pf' | 'pj', false)}
-                  disabled={identity_locked}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full sm:max-w-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="pf">Pessoa Física (CPF)</SelectItem>
-                    <SelectItem value="pj">Pessoa Jurídica (CNPJ)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="document"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{documentLabel} *</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Input
-                      {...field}
-                      value={(field.value as string) ?? ''}
-                      onChange={e => field.onChange(formatDocument(e.target.value))}
-                      placeholder={documentPlaceholder}
-                      inputMode="numeric"
-                      autoFocus
-                      disabled={identity_locked}
-                    />
-                    {documentStatus === 'loading' && (
-                      <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                    )}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <form onSubmit={form.handleSubmit(handleValid, handleInvalid)} className="flex flex-1 flex-col min-h-0">
+        <div className="shrink-0 px-6 pt-6">
+          <DialogHeader>
+            <DialogTitle>Identificação do Cliente</DialogTitle>
+          </DialogHeader>
         </div>
 
-        <fieldset disabled={all_disabled} className="mt-4 border-0 p-0 disabled:opacity-70">
-          <ClientFormBody online={is_online} addressAutoFetch={address_auto_fetch} />
-        </fieldset>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+          {!is_online && (
+            <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400">
+              <WifiOff size={13} className="shrink-0" aria-hidden="true" />
+              <span>Sem conexão — dados serão salvos localmente e sincronizados ao reconectar</span>
+            </div>
+          )}
 
-        <DialogFooter className="mt-6 flex flex-row justify-between gap-2">
+          {is_existing && (
+            <Alert className="mt-4 border-blue-200 bg-blue-50 text-blue-800">
+              <UserCheck className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between gap-3">
+                <span>
+                  {isEditingExisting
+                    ? 'Editando um cliente já cadastrado. Altere os campos desejados e salve.'
+                    : 'Cliente já cadastrado.'}
+                </span>
+                {!isEditingExisting && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => setIsEditingExisting(true)}
+                  >
+                    <Pencil className="mr-1 h-3.5 w-3.5" />
+                    Editar dados
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {documentStatus === 'enriched' && (
+            <Alert className="mt-4 border-emerald-200 bg-emerald-50 text-emerald-800">
+              <UserCheck className="h-4 w-4" />
+              <AlertDescription>Dados preenchidos automaticamente. Revise e complete os campos.</AlertDescription>
+            </Alert>
+          )}
+
+          {documentStatus === 'not-found' && digits.length >= 11 && (
+            <Alert className="mt-4 border-amber-200 bg-amber-50 text-amber-800">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Nenhum dado encontrado. Preencha os campos manualmente.</AlertDescription>
+            </Alert>
+          )}
+
+          {documentStatus === 'error' && (
+            <Alert className="mt-4 border-red-200 bg-red-50 text-red-800">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Erro ao buscar dados. Preencha os campos manualmente.</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="mt-6 space-y-4">
+            <FormField
+              control={form.control}
+              name="personType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de documento *</FormLabel>
+                  <Select
+                    value={(field.value as string) ?? 'pf'}
+                    onValueChange={value => switchPersonType(value as 'pf' | 'pj', false)}
+                    disabled={identity_locked}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full sm:max-w-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pf">Pessoa Física (CPF)</SelectItem>
+                      <SelectItem value="pj">Pessoa Jurídica (CNPJ)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="document"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{documentLabel} *</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        value={(field.value as string) ?? ''}
+                        onChange={e => field.onChange(formatDocument(e.target.value))}
+                        placeholder={documentPlaceholder}
+                        inputMode="numeric"
+                        autoFocus
+                        disabled={identity_locked}
+                      />
+                      {documentStatus === 'loading' && (
+                        <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <fieldset disabled={all_disabled} className="mt-4 border-0 p-0 disabled:opacity-70">
+            <ClientFormBody online={is_online} addressAutoFetch={address_auto_fetch} />
+          </fieldset>
+        </div>
+
+        <DialogFooter className="shrink-0 border-t border-border px-6 py-4 flex flex-row justify-between gap-2">
           <Button type="button" variant="ghost" onClick={() => onSubmit()}>
             Cancelar
           </Button>

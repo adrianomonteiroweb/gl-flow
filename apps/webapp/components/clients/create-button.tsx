@@ -24,7 +24,7 @@ export const CreateClientButton = ({ onClientCreated }: { onClientCreated?: (res
         <Button>Novo Cliente</Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[680px] max-h-[90vh] flex flex-col gap-0 overflow-hidden p-0">
         <ClientDialogForm onSubmit={handleSubmit} />
       </DialogContent>
     </Dialog>

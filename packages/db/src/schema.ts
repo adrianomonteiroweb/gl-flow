@@ -91,9 +91,6 @@ export const leads_table = schema.table(
     index('idx_leads_workspace').on(table.workspace_id),
     index('idx_leads_pipeline_step').on(table.workspace_id, table.pipeline_id, table.step_id),
     index('idx_leads_assignee').on(table.assignee_id),
-    uniqueIndex('uq_lead_phone_workspace')
-      .on(table.phone, table.workspace_id)
-      .where(sql`phone IS NOT NULL AND workspace_id IS NOT NULL`),
   ]
 );
 

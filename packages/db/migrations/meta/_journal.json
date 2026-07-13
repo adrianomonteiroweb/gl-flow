@@ -43,6 +43,13 @@
       "when": 1783432420709,
       "tag": "0005_next_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783975399167,
+      "tag": "0006_thankful_thing",
+      "breakpoints": true
     }
   ]
 }

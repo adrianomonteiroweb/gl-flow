@@ -168,36 +168,46 @@ export const VehicleModelForm = ({ model, onSaved, onCancel }: VehicleModelFormP
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 space-y-5">
-          {/* Condição — âncora cognitiva */}
-          <FormField
-            control={form.control}
-            name="condition"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Condição</FormLabel>
-                <FormControl>
-                  <ToggleGroup
-                    type="single"
-                    value={field.value}
-                    onValueChange={handleConditionChange}
-                    variant="outline"
-                    className="w-full"
-                    aria-label="Condição do veículo"
-                  >
-                    {Object.entries(CONDITION_LABELS).map(([value, label]) => (
-                      <ToggleGroupItem
-                        key={value}
-                        value={value}
-                        className={cn('flex-1', CONDITION_TOGGLE_CLASSES[value])}
-                      >
-                        {label}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {isEditing ? (
+            <div className={cn(
+              'inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium',
+              condition === 'new'
+                ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                : 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+            )}>
+              {CONDITION_LABELS[condition as keyof typeof CONDITION_LABELS] ?? condition}
+            </div>
+          ) : (
+            <FormField
+              control={form.control}
+              name="condition"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Condição</FormLabel>
+                  <FormControl>
+                    <ToggleGroup
+                      type="single"
+                      value={field.value}
+                      onValueChange={handleConditionChange}
+                      variant="outline"
+                      className="w-full"
+                      aria-label="Condição do veículo"
+                    >
+                      {Object.entries(CONDITION_LABELS).map(([value, label]) => (
+                        <ToggleGroupItem
+                          key={value}
+                          value={value}
+                          className={cn('flex-1', CONDITION_TOGGLE_CLASSES[value])}
+                        >
+                          {label}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          )}
 
           {/* Identificação */}
           <SectionHeader>Identificação</SectionHeader>

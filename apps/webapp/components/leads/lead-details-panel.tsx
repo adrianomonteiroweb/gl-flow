@@ -22,7 +22,6 @@ import { LeadAddressSection } from './lead-address-section';
 import { LeadDetailedInfo } from './lead-detailed-info';
 import { LeadTasksSection } from './lead-tasks-section';
 import { LeadTimelineSection } from './lead-timeline-section';
-import { LeadVehicleInterest } from './lead-vehicle-interest';
 
 export type LeadFieldChange =
   | { kind: 'name' | 'email' | 'phone'; value: string | undefined }
@@ -171,12 +170,8 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
           <Avatar className="mx-auto h-16 w-16 md:h-20 md:w-20">
             <AvatarFallback className="bg-primary text-primary-foreground text-lg">{leadInitials}</AvatarFallback>
           </Avatar>
-          <div className="text-center space-y-2">
+          <div className="text-center">
             <h3 className="text-xl font-semibold">{leadName}</h3>
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={handleOpenNegotiation}>
-              <Handshake className="h-4 w-4" />
-              Nova Negociação
-            </Button>
           </div>
         </div>
       </div>
@@ -248,14 +243,15 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
                       onSuccess={handleFieldSuccess}
                     />
 
-                    <LeadVehicleInterest
-                      leadId={leadData.id}
-                      vehicleInterest={!!(leadData?.payload as Record<string, unknown>)?.vehicle_interest}
-                      clientId={((leadData?.payload as Record<string, unknown>)?.client_id as string) ?? null}
-                      leadName={leadData?.name}
-                      leadEmail={leadData?.email}
-                      leadPhone={leadData?.phone}
-                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={handleOpenNegotiation}
+                    >
+                      <Handshake className="h-4 w-4" />
+                      Nova Negociação
+                    </Button>
                   </div>
                 </div>
               </TabsContent>

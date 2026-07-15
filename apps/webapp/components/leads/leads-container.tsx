@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Users, ListFilter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, ListFilter, ChevronDown, ChevronUp, UserPlus } from 'lucide-react';
 
 import { Button } from '@workspace/ui/components/button';
 import { Toggle } from '@workspace/ui/components/toggle';
@@ -314,6 +314,16 @@ export function LeadsContainer() {
               </SelectContent>
             </Select>
           )}
+
+          <Button
+            type="button"
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => document.dispatchEvent(new Event('quick-lead:open'))}
+          >
+            <UserPlus className="h-4 w-4" />
+            <span className="hidden lg:inline">Cadastrar Lead</span>
+            <span className="lg:hidden">Novo</span>
+          </Button>
 
           {canDistribute && (
             <DistributeDialog

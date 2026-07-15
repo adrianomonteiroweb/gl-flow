@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/componen
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@workspace/ui/components/tooltip';
 import { cn } from '@workspace/ui/lib/utils';
 import { AddressData } from '@/repositories/types';
-import { getClient } from '@/actions/clients';
+import { getClient, getClients } from '@/actions/clients';
 import { getLeadTasks } from '@/actions/tasks';
 import { getLeadTaskAlert, leadTaskAlertConfig, type TaskLike } from '@/utils/task-status';
 
@@ -130,6 +130,19 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
           email: c.email ?? null,
         });
       }
+    } else if (leadData?.phone) {
+      const result = await getClients({ q: leadData.phone, page: 1, page_size: 1 });
+      const match = (result.data ?? [])[0] as Record<string, any> | undefined;
+
+      if (match?.id) {
+        setWizardClient({
+          id: String(match.id),
+          name: String(match.name),
+          document: match.document ?? null,
+          phone: match.phone ?? null,
+          email: match.email ?? null,
+        });
+      }
     }
 
     setNegotiationOpen(true);
@@ -245,8 +258,7 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
 
                     <Button
                       type="button"
-                      variant="outline"
-                      className="w-full gap-2"
+                      className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={handleOpenNegotiation}
                     >
                       <Handshake className="h-4 w-4" />

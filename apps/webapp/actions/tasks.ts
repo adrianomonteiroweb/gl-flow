@@ -20,6 +20,15 @@ const CreateTaskSchema = z.object({
 
 type CreateTaskParams = z.infer<typeof CreateTaskSchema>;
 
+const UpdateTaskSchema = z.object({
+  taskId: z.string().min(1),
+  title: z.string().min(1, 'Título é obrigatório').max(255).optional(),
+  description: z.string().max(1000).nullable().optional(),
+  dueDate: z.string().min(1, 'Prazo é obrigatório').optional(),
+});
+
+type UpdateTaskParams = z.infer<typeof UpdateTaskSchema>;
+
 export const getLeadTasks = async (leadId: string) => {
   try {
     const me = await getMe();
@@ -89,6 +98,72 @@ export const createTask = async (params: CreateTaskParams) => {
   } catch (error: any) {
     console.error('Error creating task:', error);
     return { success: false as const, error: error?.message || 'Erro ao criar tarefa' };
+  }
+};
+
+export const updateTask = async (params: UpdateTaskParams) => {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { success: false as const, error: 'Usuário não autenticado' };
+    }
+
+    const workspace_id = await resolveWorkspaceId(me);
+
+    if (!workspace_id) {
+      return { success: false as const, error: WORKSPACE_REQUIRED_ERROR };
+    }
+
+    const parsed = UpdateTaskSchema.safeParse(params);
+
+    if (!parsed.success) {
+      const message = parsed.error.errors[0]?.message ?? 'Dados inválidos';
+      return { success: false as const, error: message };
+    }
+
+    const task = await TaskRepository.findById(parsed.data.taskId);
+
+    if (!task || task.workspace_id !== workspace_id) {
+      return { success: false as const, error: 'Tarefa não encontrada' };
+    }
+
+    const patch: Record<string, unknown> = {};
+
+    if (parsed.data.title !== undefined) {
+      patch.title = parsed.data.title;
+    }
+
+    if (parsed.data.description !== undefined) {
+      patch.description = parsed.data.description || null;
+    }
+
+    if (parsed.data.dueDate !== undefined) {
+      patch.due_date = new Date(parsed.data.dueDate).toISOString();
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return { success: true as const, data: task };
+    }
+
+    const data = await TaskRepository.update(parsed.data.taskId, patch);
+
+    LeadActivityLogger.log({
+      workspace_id,
+      lead_id: task.lead_id,
+      type: 'task_updated',
+      actor_type: 'user',
+      actor_id: me.id,
+      actor_name: me.name,
+      metadata: { taskId: task.id, title: parsed.data.title ?? task.title },
+    });
+
+    revalidatePath('/pipelines', 'layout');
+
+    return { success: true as const, data };
+  } catch (error: any) {
+    console.error('Error updating task:', error);
+    return { success: false as const, error: error?.message || 'Erro ao atualizar tarefa' };
   }
 };
 

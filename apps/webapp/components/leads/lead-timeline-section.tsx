@@ -55,6 +55,7 @@ const ACTIVITY_CONFIG: Record<LeadActivity['type'], { icon: LucideIcon; label: s
   task_created: { icon: ClipboardList, label: 'Tarefa criada', tone: 'primary' },
   task_completed: { icon: CheckCircle2, label: 'Tarefa concluída', tone: 'success' },
   task_reopened: { icon: RotateCcw, label: 'Tarefa reaberta', tone: 'warning' },
+  task_updated: { icon: Pencil, label: 'Tarefa atualizada', tone: 'neutral' },
   task_deleted: { icon: Trash2, label: 'Tarefa removida', tone: 'neutral' },
   proposal_created: { icon: FileText, label: 'Proposta criada', tone: 'primary' },
   note_added: { icon: MessageSquare, label: 'Nota', tone: 'neutral' },
@@ -123,6 +124,7 @@ const renderDetail = (activity: LeadActivity): string | null => {
     case 'task_created':
     case 'task_completed':
     case 'task_reopened':
+    case 'task_updated':
     case 'task_deleted':
     case 'proposal_created':
       return getString(meta.title);

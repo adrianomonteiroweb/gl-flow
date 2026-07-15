@@ -156,7 +156,9 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadNam
     setClient(savedClient);
     setEditOpen(false);
     setFormKey(k => k + 1);
-    completeLeadEnrichmentTask(leadId);
+    completeLeadEnrichmentTask(leadId).then(() => {
+      document.dispatchEvent(new Event('tasks:refresh'));
+    });
   };
 
   const handleCancel = () => {
@@ -179,7 +181,9 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadNam
       setClient(linkedClient);
     }
 
-    completeLeadEnrichmentTask(leadId);
+    completeLeadEnrichmentTask(leadId).then(() => {
+      document.dispatchEvent(new Event('tasks:refresh'));
+    });
   };
 
   return (

@@ -1,7 +1,9 @@
-import { eq, ilike, asc, desc, count, or, isNull, and, gt, inArray } from 'drizzle-orm';
+import { eq, ilike, asc, desc, count, or, isNull, and, gt, inArray, sql } from 'drizzle-orm';
 
-import { leads_table, users_table, steps_table, status_table } from '@workspace/db';
+import { leads_table, tasks_table, users_table, steps_table, status_table } from '@workspace/db';
 import BaseRepository from '@workspace/db/repositories/BaseRepository';
+
+type LeadTaskSummary = { due_date: string; completed_at: string | null };
 
 export type GetLeadParams = {
   workspace_id: string;
@@ -9,7 +11,7 @@ export type GetLeadParams = {
   page?: number;
   page_size?: number;
   steps?: string[];
-  /** Deprecated — tasks were removed; kept for caller compatibility, ignored. */
+  /** Filter by aggregate task state: 'overdue' | 'near' | 'upcoming' | 'none' (OR-combined). */
   taskAlerts?: string[];
   /** When set, restrict results to leads in this pipeline. */
   pipelineId?: string;
@@ -56,7 +58,7 @@ const buildChat = (lead: any, step: any, status: any) => ({
 export class LeadRepository extends BaseRepository {
   static override model: any = leads_table;
 
-  static async getLeads({ workspace_id, q = '', page = 1, page_size = 10, steps, assigneeId, pipelineId, pipelineIds }: GetLeadParams) {
+  static async getLeads({ workspace_id, q = '', page = 1, page_size = 10, steps, taskAlerts, assigneeId, pipelineId, pipelineIds }: GetLeadParams) {
     const limit = page_size || 10;
     const offset = ((page || 1) - 1) * page_size;
 
@@ -80,6 +82,59 @@ export class LeadRepository extends BaseRepository {
       conditions.push(inArray(leads_table.step_id, steps));
     }
 
+    // Aggregate task-state filters (America/Sao_Paulo, day granularity). Only
+    // open tasks count for overdue/near/upcoming; 'none' = lead with no task.
+    if (taskAlerts?.length) {
+      const alertConditions: any[] = [];
+
+      if (taskAlerts.includes('overdue')) {
+        alertConditions.push(sql`EXISTS (
+          SELECT 1 FROM ${tasks_table}
+          WHERE ${tasks_table.lead_id} = ${leads_table.id}
+          AND ${tasks_table.deleted_at} IS NULL
+          AND ${tasks_table.completed_at} IS NULL
+          AND (${tasks_table.due_date} AT TIME ZONE 'America/Sao_Paulo')::date
+            < (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date
+        )`);
+      }
+
+      if (taskAlerts.includes('near')) {
+        alertConditions.push(sql`EXISTS (
+          SELECT 1 FROM ${tasks_table}
+          WHERE ${tasks_table.lead_id} = ${leads_table.id}
+          AND ${tasks_table.deleted_at} IS NULL
+          AND ${tasks_table.completed_at} IS NULL
+          AND (${tasks_table.due_date} AT TIME ZONE 'America/Sao_Paulo')::date
+            = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date
+        )`);
+      }
+
+      if (taskAlerts.includes('upcoming')) {
+        alertConditions.push(sql`EXISTS (
+          SELECT 1 FROM ${tasks_table}
+          WHERE ${tasks_table.lead_id} = ${leads_table.id}
+          AND ${tasks_table.deleted_at} IS NULL
+          AND ${tasks_table.completed_at} IS NULL
+          AND (${tasks_table.due_date} AT TIME ZONE 'America/Sao_Paulo')::date
+            > (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date
+        )`);
+      }
+
+      if (taskAlerts.includes('none')) {
+        alertConditions.push(sql`NOT EXISTS (
+          SELECT 1 FROM ${tasks_table}
+          WHERE ${tasks_table.lead_id} = ${leads_table.id}
+          AND ${tasks_table.deleted_at} IS NULL
+        )`);
+      }
+
+      if (alertConditions.length === 1) {
+        conditions.push(alertConditions[0]);
+      } else if (alertConditions.length > 1) {
+        conditions.push(or(...alertConditions));
+      }
+    }
+
     const where = and(...conditions);
 
     const rows = await this.db
@@ -95,13 +150,32 @@ export class LeadRepository extends BaseRepository {
 
     const countResult = await this.db.select({ value: count(leads_table.id) }).from(leads_table).where(where);
 
+    // Batch-fetch task summaries for the current page of leads (no N+1). Feeds
+    // the aggregate task badge on kanban cards and the leads table.
+    const leadIds = rows.map((row: any) => row.lead?.id).filter(Boolean) as string[];
+
+    const taskRows = leadIds.length
+      ? await this.db
+          .select({ lead_id: tasks_table.lead_id, due_date: tasks_table.due_date, completed_at: tasks_table.completed_at })
+          .from(tasks_table)
+          .where(and(inArray(tasks_table.lead_id, leadIds), isNull(tasks_table.deleted_at)))
+      : [];
+
+    const tasksByLead = new Map<string, LeadTaskSummary[]>();
+
+    for (const task of taskRows) {
+      const list = tasksByLead.get(task.lead_id) ?? [];
+      list.push({ due_date: task.due_date, completed_at: task.completed_at });
+      tasksByLead.set(task.lead_id, list);
+    }
+
     return {
       count: countResult[0]?.value || 0,
       data: rows.map((row: any) => ({
         lead: row.lead,
         assignee: row.assignee,
         chat: buildChat(row.lead, row.step, row.status),
-        tasks: [],
+        tasks: row.lead?.id ? (tasksByLead.get(row.lead.id) ?? []) : [],
       })),
     };
   }

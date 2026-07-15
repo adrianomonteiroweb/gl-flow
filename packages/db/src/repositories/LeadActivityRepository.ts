@@ -22,6 +22,7 @@ export type LeadActivityType =
   | 'task_created'
   | 'task_completed'
   | 'task_reopened'
+  | 'task_updated'
   | 'task_deleted'
   | 'proposal_created';
 

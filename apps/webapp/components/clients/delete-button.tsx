@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -84,6 +85,7 @@ export const InactivateClientButton = ({ client }: any) => {
           <>
             <DialogHeader className="sr-only">
               <DialogTitle>Inativar cliente</DialogTitle>
+              <DialogDescription>Carregando informações...</DialogDescription>
             </DialogHeader>
             <div className="flex items-center justify-center py-10">
               <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -95,6 +97,7 @@ export const InactivateClientButton = ({ client }: any) => {
           <>
             <DialogHeader>
               <DialogTitle>Não é possível inativar</DialogTitle>
+              <DialogDescription>O cliente não pode ser inativado no momento</DialogDescription>
             </DialogHeader>
 
             <div className="mt-4 mb-4 space-y-3">
@@ -130,6 +133,7 @@ export const InactivateClientButton = ({ client }: any) => {
           <form action={handleAction}>
             <DialogHeader>
               <DialogTitle>Inativar cliente</DialogTitle>
+              <DialogDescription>Esta ação marcará o cliente como inativo</DialogDescription>
             </DialogHeader>
 
             <div className="mt-4 mb-4 space-y-3">

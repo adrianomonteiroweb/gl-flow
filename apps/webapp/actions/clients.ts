@@ -1148,7 +1148,15 @@ export async function inactivateClient(id: string) {
       };
     }
 
+    // Soft delete both leads_table and clients_table records
     await LeadRepository.inactivateClient(id);
+
+    // Also inactivate the corresponding client record (same id is used for both)
+    try {
+      await ClientRepository.softDelete(id);
+    } catch {
+      // If client record doesn't exist, that's fine - just continue
+    }
 
     LeadActivityLogger.log({
       workspace_id: lead.workspace_id ?? me.workspace_id ?? null,
@@ -1158,6 +1166,9 @@ export async function inactivateClient(id: string) {
       actor_id: me.id,
       actor_name: me.name,
     });
+
+    revalidatePath('/leads', 'layout');
+    revalidatePath('/pipelines', 'layout');
 
     return { status: 200 };
   } catch (error: any) {
@@ -1178,7 +1189,16 @@ export async function reactivateClient(id: string) {
       return { status: 403, message: 'Você não tem permissão para reativar clientes.' };
     }
 
+    // Reactivate both leads_table and clients_table records
     await LeadRepository.reactivateClient(id);
+
+    // Also reactivate the corresponding client record
+    try {
+      const now = new Date().toISOString();
+      await ClientRepository.update(id, { deleted_at: null, status: 'active', updated_at: now });
+    } catch {
+      // If client record doesn't exist, that's fine - just continue
+    }
 
     LeadActivityLogger.log({
       workspace_id: me.workspace_id ?? null,
@@ -1188,6 +1208,9 @@ export async function reactivateClient(id: string) {
       actor_id: me.id,
       actor_name: me.name,
     });
+
+    revalidatePath('/leads', 'layout');
+    revalidatePath('/pipelines', 'layout');
 
     return { status: 200 };
   } catch (error: any) {

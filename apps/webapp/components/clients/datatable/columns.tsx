@@ -17,7 +17,7 @@ export const columns: any = [
       const isQuickLead = !row.original.document;
       return (
         <Badge variant="secondary" className={isQuickLead ? getToneClasses('info').soft : getToneClasses('success').soft}>
-          {isQuickLead ? 'Rápido' : 'Completo'}
+          {isQuickLead ? 'Rápido' : 'Qualificado'}
         </Badge>
       );
     },

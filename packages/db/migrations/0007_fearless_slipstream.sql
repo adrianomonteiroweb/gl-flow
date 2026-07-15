@@ -1,0 +1,1 @@
+ALTER TABLE "linharesflow"."clients" ADD COLUMN "source" varchar(50) DEFAULT 'lead' NOT NULL;

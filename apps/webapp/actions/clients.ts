@@ -218,6 +218,7 @@ type GetClientParams = {
   assigneeId?: string;
   unassignedOnly?: boolean;
   type?: 'all' | 'quick_lead' | 'complete';
+  source?: 'lead' | 'integration';
 };
 
 export const getClients = async (params: GetClientParams) => {
@@ -239,6 +240,7 @@ export const getClients = async (params: GetClientParams) => {
       includeInactive,
       mineOrUnassignedUserId: me.id,
       type: params.type,
+      source: params.source,
     });
   }
 
@@ -251,6 +253,7 @@ export const getClients = async (params: GetClientParams) => {
     assigneeId: params.assigneeId,
     unassignedOnly: params.unassignedOnly,
     type: params.type,
+    source: params.source,
   });
 };
 
@@ -554,6 +557,7 @@ export async function createClient(data: unknown) {
       name: input.name,
       email: input.email,
       address: input.address,
+      source: 'lead',
     };
 
     if (input.id) {
@@ -867,6 +871,7 @@ export async function createQuickLead(data: unknown) {
       name,
       email,
       phone,
+      source: 'lead',
     });
 
     LeadActivityLogger.log({

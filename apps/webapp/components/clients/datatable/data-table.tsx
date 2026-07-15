@@ -10,11 +10,18 @@ import { getClients } from '@/actions/clients';
 import { CreateClientButton } from '@/components/clients/create-button';
 import { PendingClientsList } from '@/components/clients/pending-clients-list';
 import { OfflineIndicator } from '@/components/commons/offline-indicator';
+import { ClientsEmptyState } from '@/components/clients/clients-empty-state';
 
-export function ClientsDataTable() {
+interface ClientsDataTableProps {
+  mode?: 'leads' | 'clients';
+}
+
+export function ClientsDataTable({ mode = 'leads' }: ClientsDataTableProps) {
   const [response, setResponse] = useState({ data: [], status: 200, count: 0 });
   const [loading, setLoading] = useState(false);
   const { params } = useSearchParams();
+
+  const isLeadsMode = mode === 'leads';
 
   const q = params.q || '';
   const page = Number(params.page) || 1;
@@ -30,15 +37,22 @@ export function ClientsDataTable() {
     setLoading(true);
 
     try {
-      const res = await getClients({ q, page, page_size, includeInactive, type });
+      const res = await getClients({
+        q,
+        page,
+        page_size,
+        includeInactive,
+        type: isLeadsMode ? type : 'all',
+        source: isLeadsMode ? 'lead' : 'integration',
+      });
 
       setResponse(res as any);
     } catch (error) {
-      console.error('Erro ao carregar clientes:', error);
+      console.error('Erro ao carregar registros:', error);
     } finally {
       setLoading(false);
     }
-  }, [q, page, page_size, includeInactive, type]);
+  }, [q, page, page_size, includeInactive, type, isLeadsMode]);
 
   useEffect(() => {
     fetchData();
@@ -55,23 +69,29 @@ export function ClientsDataTable() {
     enableRowSelection: false,
   });
 
+  const title = isLeadsMode ? 'Leads' : 'Clientes';
+  const emptyMessage = isLeadsMode ? 'Nenhum lead encontrado.' : <ClientsEmptyState />;
+
   return (
     <div className="space-y-4">
       <div className="hidden lg:flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-foreground">Clientes</h2>
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <OfflineIndicator />
         </div>
-        <CreateClientButton />
+        {isLeadsMode && <CreateClientButton label="Novo Lead" />}
       </div>
 
-      <DataTableToolbar actionSlot={<div className="lg:hidden"><CreateClientButton /></div>} />
+      <DataTableToolbar
+        actionSlot={isLeadsMode ? <div className="lg:hidden"><CreateClientButton label="Novo Lead" /></div> : undefined}
+        showTypeFilter={isLeadsMode}
+      />
 
       <OfflineIndicator className="lg:hidden" />
 
-      <PendingClientsList />
+      {isLeadsMode && <PendingClientsList />}
 
-      <Datatable.Responsive table={table} columns={columns} loading={loading} emptyMessage="Nenhum cliente encontrado." />
+      <Datatable.Responsive table={table} columns={columns} loading={loading} emptyMessage={emptyMessage} />
       <Datatable.Pagination table={table} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
     </div>
   );

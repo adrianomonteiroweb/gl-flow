@@ -12,9 +12,10 @@ import { canAccessSettings } from '@/lib/auth/permissions';
 
 interface DataTableToolbarProps {
   actionSlot?: ReactNode;
+  showTypeFilter?: boolean;
 }
 
-export function DataTableToolbar({ actionSlot }: DataTableToolbarProps) {
+export function DataTableToolbar({ actionSlot, showTypeFilter = true }: DataTableToolbarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -70,16 +71,18 @@ export function DataTableToolbar({ actionSlot }: DataTableToolbarProps) {
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Select value={type} onValueChange={handleTypeChange}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os cadastros</SelectItem>
-            <SelectItem value="quick_lead">Apenas rápidos</SelectItem>
-            <SelectItem value="complete">Apenas completos</SelectItem>
-          </SelectContent>
-        </Select>
+        {showTypeFilter && (
+          <Select value={type} onValueChange={handleTypeChange}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os cadastros</SelectItem>
+              <SelectItem value="quick_lead">Apenas rápidos</SelectItem>
+              <SelectItem value="complete">Apenas qualificados</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
 
         {showInactiveToggle && (
           <div className="flex items-center space-x-2">

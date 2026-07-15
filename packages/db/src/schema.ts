@@ -392,6 +392,8 @@ export const clients_table = schema.table(
     partners: jsonb('partners'),
 
     status: varchar('status', { length: 50 }).default('active').notNull(),
+    // 'lead' = prospect cadastrado manualmente | 'integration' = importado via integração externa
+    source: varchar('source', { length: 50 }).default('lead').notNull(),
     // Capture timestamp on the device when created offline (created_at = server receipt).
     client_created_at: timestamp('client_created_at', { withTimezone: true, mode: 'string' }),
 

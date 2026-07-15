@@ -50,6 +50,13 @@
       "when": 1783975399167,
       "tag": "0006_thankful_thing",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784123160695,
+      "tag": "0007_fearless_slipstream",
+      "breakpoints": true
     }
   ]
 }

@@ -7,7 +7,13 @@ import { Dialog, DialogContent, DialogTrigger } from '@workspace/ui/components/d
 
 import { ClientDialogForm, type ClientDialogResult } from './dialog-form';
 
-export const CreateClientButton = ({ onClientCreated }: { onClientCreated?: (result: ClientDialogResult) => void }) => {
+export const CreateClientButton = ({
+  onClientCreated,
+  label = 'Novo Lead',
+}: {
+  onClientCreated?: (result: ClientDialogResult) => void;
+  label?: string;
+}) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const handleSubmit = (result?: ClientDialogResult): void => {
@@ -21,7 +27,7 @@ export const CreateClientButton = ({ onClientCreated }: { onClientCreated?: (res
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Novo Cliente</Button>
+        <Button>{label}</Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[680px] max-h-[90vh] flex flex-col gap-0 overflow-hidden p-0">

@@ -3,11 +3,11 @@
 import { ClientsDataTable } from '@/components/clients/datatable/data-table';
 import { PageInset } from '@/components/commons/page-inset';
 
-export default function ClientsPage() {
+export default function LeadsPage() {
   return (
-    <PageInset title="Clientes">
+    <PageInset title="Leads">
       <div className="px-4">
-        <ClientsDataTable mode="clients" />
+        <ClientsDataTable mode="leads" />
       </div>
     </PageInset>
   );

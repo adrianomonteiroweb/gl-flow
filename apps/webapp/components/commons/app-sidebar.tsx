@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type * as React from 'react';
-import { LayoutDashboardIcon, InboxIcon, UsersRoundIcon, SettingsIcon, UserPlusIcon, BikeIcon } from 'lucide-react';
+import { LayoutDashboardIcon, InboxIcon, UsersRoundIcon, SettingsIcon, ContactIcon, BikeIcon } from 'lucide-react';
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@workspace/ui/components/sidebar';
 import { Separator } from '@workspace/ui/components/separator';
@@ -28,9 +28,9 @@ const data = {
       url: '/pipelines',
     },
     {
-      title: 'Cadastro Rápido de Lead',
-      icon: UserPlusIcon,
-      action: () => document.dispatchEvent(new Event('quick-lead:open')),
+      title: 'Leads',
+      icon: ContactIcon,
+      url: '/leads',
     },
     {
       title: 'Clientes',

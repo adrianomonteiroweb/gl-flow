@@ -85,6 +85,7 @@ export class ClientRepository extends BaseRepository {
     unassignedOnly?: boolean;
     mineOrUnassignedUserId?: string;
     type?: 'all' | 'quick_lead' | 'complete';
+    source?: 'lead' | 'integration';
   }) {
     const { page = 1, page_size = 10 } = params;
     const limit = page_size || 10;
@@ -127,6 +128,10 @@ export class ClientRepository extends BaseRepository {
       conditions.push(isNull(clients_table.document));
     } else if (params.type === 'complete') {
       conditions.push(isNotNull(clients_table.document));
+    }
+
+    if (params.source) {
+      conditions.push(eq(clients_table.source, params.source));
     }
 
     const where = and(...conditions);

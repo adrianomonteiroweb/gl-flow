@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import type * as React from 'react';
-import { LayoutDashboardIcon, InboxIcon, UsersRoundIcon, SettingsIcon, ContactIcon, BikeIcon } from 'lucide-react';
+import { LayoutDashboardIcon, InboxIcon, UsersRoundIcon, SettingsIcon, ContactIcon, BikeIcon, UserPlus } from 'lucide-react';
 
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@workspace/ui/components/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarRail } from '@workspace/ui/components/sidebar';
 import { Separator } from '@workspace/ui/components/separator';
 
 import { useSessionContext } from '@/contexts/session';
@@ -66,6 +66,19 @@ export function AppSidebar({ ...props }) {
       <Separator className="my-2" />
 
       <SidebarContent>
+        <SidebarMenu className="px-2 pt-1 pb-2">
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Cadastrar Lead"
+              className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/80"
+              onClick={() => document.dispatchEvent(new Event('quick-lead:open'))}
+            >
+              <UserPlus />
+              <span>Cadastrar Lead</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
         <SidebarNav items={navItems} />
       </SidebarContent>
 

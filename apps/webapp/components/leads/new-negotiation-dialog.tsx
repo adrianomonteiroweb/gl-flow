@@ -83,17 +83,21 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, initialClient, o
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const getValuesRef = useRef<(() => ClientFormValues) | null>(null);
+  const initialized_ref = useRef(false);
 
   useEffect(() => {
     if (open) {
-      setSelectedVehicle(initialVehicle ?? null);
+      if (!initialized_ref.current) {
+        initialized_ref.current = true;
+        setSelectedVehicle(initialVehicle ?? null);
 
-      // Cliente já conhecido: pula a etapa de busca e começa na seleção do veículo.
-      if (initialClient) {
-        setSelectedClient(initialClient);
-        setStep('vehicle');
+        if (initialClient) {
+          setSelectedClient(initialClient);
+          setStep('vehicle');
+        }
       }
     } else {
+      initialized_ref.current = false;
       setStep('client');
       setQuery('');
       setClients([]);

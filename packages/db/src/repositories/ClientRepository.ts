@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, isNull, isNotNull, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, isNull, isNotNull, or, sql, type SQL } from 'drizzle-orm';
 
 import BaseRepository from './BaseRepository';
 import { clients_table } from '../schema';
@@ -58,6 +58,80 @@ export class ClientRepository extends BaseRepository {
     return row ?? null;
   }
 
+  /**
+   * Busca clientes importados (source='integration') que já possam ser a mesma
+   * pessoa de um lead sendo cadastrado, casando por telefone OU e-mail.
+   *
+   * O telefone dos clientes não é armazenado normalizado, então a comparação é
+   * feita por dígitos (`regexp_replace`), contra o canônico local (10/11) e a
+   * variante com DDI (`55` + canônico). `phoneDigits` deve chegar já normalizado.
+   */
+  static async findIntegrationClientsByContact(workspaceId: string, contact: { phoneDigits?: string; email?: string }) {
+    const matchers: SQL[] = [];
+
+    if (contact.phoneDigits) {
+      const stored_digits = sql`regexp_replace(${clients_table.phone}, '[^0-9]', '', 'g')`;
+      matchers.push(sql`${stored_digits} = ${contact.phoneDigits}`);
+      matchers.push(sql`${stored_digits} = ${`55${contact.phoneDigits}`}`);
+    }
+
+    if (contact.email) {
+      matchers.push(sql`lower(${clients_table.email}) = ${contact.email.toLowerCase()}`);
+    }
+
+    if (matchers.length === 0) {
+      return [];
+    }
+
+    return await this.db
+      .select()
+      .from(clients_table)
+      .where(
+        and(eq(clients_table.workspace_id, workspaceId), isNull(clients_table.deleted_at), eq(clients_table.source, 'integration'), or(...matchers))
+      )
+      .orderBy(desc(clients_table.created_at))
+      .limit(10);
+  }
+
+  static async findClientsByContact(
+    workspaceId: string,
+    contact: { phoneDigits?: string; email?: string },
+    sources: string[] = ['integration', 'lead']
+  ) {
+    const matchers: SQL[] = [];
+
+    if (contact.phoneDigits) {
+      const stored_digits = sql`regexp_replace(${clients_table.phone}, '[^0-9]', '', 'g')`;
+      matchers.push(sql`${stored_digits} = ${contact.phoneDigits}`);
+      matchers.push(sql`${stored_digits} = ${`55${contact.phoneDigits}`}`);
+    }
+
+    if (contact.email) {
+      matchers.push(sql`lower(${clients_table.email}) = ${contact.email.toLowerCase()}`);
+    }
+
+    if (matchers.length === 0) {
+      return [];
+    }
+
+    return await this.db
+      .select()
+      .from(clients_table)
+      .where(
+        and(
+          eq(clients_table.workspace_id, workspaceId),
+          isNull(clients_table.deleted_at),
+          inArray(clients_table.source, sources),
+          or(...matchers)
+        )
+      )
+      .orderBy(
+        sql`CASE WHEN ${clients_table.source} = 'integration' THEN 0 ELSE 1 END`,
+        desc(clients_table.created_at)
+      )
+      .limit(10);
+  }
+
   static async search(workspaceId: string, q: string) {
     const pattern = `%${q}%`;
 
@@ -68,7 +142,12 @@ export class ClientRepository extends BaseRepository {
         and(
           eq(clients_table.workspace_id, workspaceId),
           isNull(clients_table.deleted_at),
-          or(ilike(clients_table.name, pattern), ilike(clients_table.phone, pattern), ilike(clients_table.document, pattern), ilike(clients_table.email, pattern))
+          or(
+            ilike(clients_table.name, pattern),
+            ilike(clients_table.phone, pattern),
+            ilike(clients_table.document, pattern),
+            ilike(clients_table.email, pattern)
+          )
         )
       )
       .orderBy(asc(clients_table.name))
@@ -119,9 +198,7 @@ export class ClientRepository extends BaseRepository {
     }
 
     if (params.mineOrUnassignedUserId) {
-      conditions.push(
-        or(eq(clients_table.assignee_id, params.mineOrUnassignedUserId), isNull(clients_table.assignee_id))!
-      );
+      conditions.push(or(eq(clients_table.assignee_id, params.mineOrUnassignedUserId), isNull(clients_table.assignee_id))!);
     }
 
     if (params.type === 'quick_lead') {
@@ -136,15 +213,12 @@ export class ClientRepository extends BaseRepository {
 
     const where = and(...conditions);
 
-    const rows = await this.db
-      .select()
-      .from(clients_table)
-      .where(where)
-      .orderBy(desc(clients_table.created_at))
-      .limit(limit)
-      .offset(offset);
+    const rows = await this.db.select().from(clients_table).where(where).orderBy(desc(clients_table.created_at)).limit(limit).offset(offset);
 
-    const countResult = await this.db.select({ value: count(clients_table.id) }).from(clients_table).where(where);
+    const countResult = await this.db
+      .select({ value: count(clients_table.id) })
+      .from(clients_table)
+      .where(where);
 
     return {
       count: countResult[0]?.value || 0,

@@ -15,10 +15,11 @@ import { Button } from '@workspace/ui/components/button';
 import { SubmitButton } from '@workspace/ui/components/submit-button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@workspace/ui/components/form';
 
-import { createQuickLead } from '@/actions/clients';
+import { createQuickLead, findExistingClientsForLead } from '@/actions/clients';
 import { useSessionContext } from '@/contexts/session';
 import { useOfflineSyncContext } from '@/contexts/offline-sync';
 import { formatPhone } from '@/components/clients/client-form-schema';
+import { ExistingClientMatchDialog, type MatchedClient } from './existing-client-match-dialog';
 
 const QuickLeadSchema = z.object({
   name: z.string().min(1, 'Informe o nome'),
@@ -36,6 +37,9 @@ export const QuickLeadModal = () => {
   const { is_online, addQuickLeadToQueue } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
   const [resetNonce, setResetNonce] = useState(0);
+  const [matches, setMatches] = useState<MatchedClient[]>([]);
+  const [matchOpen, setMatchOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<QuickLeadValues | null>(null);
   const opened_ref = useRef(false);
 
   const form = useForm<QuickLeadValues>({
@@ -86,17 +90,7 @@ export const QuickLeadModal = () => {
     form.setFocus('name');
   };
 
-  const onSubmit = async (values: QuickLeadValues) => {
-    if (!is_online) {
-      const offline_id = crypto.randomUUID();
-      addQuickLeadToQueue(offline_id, values);
-      toast.success('Lead salvo localmente. Será sincronizado ao reconectar.');
-      document.dispatchEvent(new Event('leads:updated'));
-      document.dispatchEvent(new Event('clients:updated'));
-      setResetNonce(n => n + 1);
-      return;
-    }
-
+  const runCreate = async (values: QuickLeadValues) => {
     const result = await createQuickLead(values);
 
     if (!result.success) {
@@ -110,87 +104,141 @@ export const QuickLeadModal = () => {
     setResetNonce(n => n + 1);
   };
 
+  const onSubmit = async (values: QuickLeadValues) => {
+    if (!is_online) {
+      const offline_id = crypto.randomUUID();
+      addQuickLeadToQueue(offline_id, values);
+      toast.success('Lead salvo localmente. Será sincronizado ao reconectar.');
+      document.dispatchEvent(new Event('leads:updated'));
+      document.dispatchEvent(new Event('clients:updated'));
+      setResetNonce(n => n + 1);
+      return;
+    }
+
+    // Antes de criar, verifica se o contato já pertence a um cliente importado.
+    const check = await findExistingClientsForLead({ phone: values.phone, email: values.email });
+
+    if (check.success && check.data && check.data.length > 0) {
+      setPendingValues(values);
+      setMatches(check.data as MatchedClient[]);
+      setOpen(false);
+      setMatchOpen(true);
+      return;
+    }
+
+    await runCreate(values);
+  };
+
+  const handleMatchOpenChange = (next: boolean) => {
+    setMatchOpen(next);
+
+    if (!next) {
+      setMatches([]);
+      setPendingValues(null);
+    }
+  };
+
+  const handleConfirmNotSame = async () => {
+    const values = pendingValues;
+    handleMatchOpenChange(false);
+
+    if (values) {
+      await runCreate(values);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>Cadastrar Lead</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Lead</DialogTitle>
+          </DialogHeader>
 
-        {!is_online && (
-          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400">
-            <WifiOff size={13} className="shrink-0" aria-hidden="true" />
-            <span>Sem conexão — o lead será salvo localmente e sincronizado ao reconectar</span>
-          </div>
-        )}
+          {!is_online && (
+            <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400">
+              <WifiOff size={13} className="shrink-0" aria-hidden="true" />
+              <span>Sem conexão — o lead será salvo localmente e sincronizado ao reconectar</span>
+            </div>
+          )}
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome *</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Ex: João da Silva" autoFocus />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>E-mail</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="email" placeholder="nome@email.com" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>WhatsApp / Telefone *</FormLabel>
-                  <FormControl>
-                    <Input {...field} onChange={e => field.onChange(formatPhone(e.target.value))} placeholder="(00) 00000-0000" inputMode="tel" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter className="flex flex-row justify-between gap-2">
-              <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={handleClearFields}>
-                <RotateCcw className="h-4 w-4" />
-                Limpar
-              </Button>
-              <div className="flex-1" />
-              <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
-                Cancelar
-              </Button>
-              <SubmitButton isSubmitting={form.formState.isSubmitting}>
-                {!is_online ? (
-                  <>
-                    <CloudOff size={14} className="mr-1.5" aria-hidden="true" />
-                    Salvar localmente
-                  </>
-                ) : (
-                  'Cadastrar'
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Ex: João da Silva" autoFocus />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </SubmitButton>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" placeholder="nome@email.com" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>WhatsApp / Telefone *</FormLabel>
+                    <FormControl>
+                      <Input {...field} onChange={e => field.onChange(formatPhone(e.target.value))} placeholder="(00) 00000-0000" inputMode="tel" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+                <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={handleClearFields}>
+                  <RotateCcw className="h-4 w-4" />
+                  Limpar
+                </Button>
+                <div className="flex items-center gap-2 sm:ml-auto">
+                  <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
+                    Cancelar
+                  </Button>
+                  <SubmitButton isSubmitting={form.formState.isSubmitting} className="whitespace-nowrap">
+                    {!is_online ? (
+                      <>
+                        <CloudOff size={14} className="mr-1.5 shrink-0" aria-hidden="true" />
+                        Salvar offline
+                      </>
+                    ) : (
+                      'Cadastrar'
+                    )}
+                  </SubmitButton>
+                </div>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <ExistingClientMatchDialog
+        open={matchOpen}
+        onOpenChange={handleMatchOpenChange}
+        matches={matches}
+        leadValues={{ name: pendingValues?.name ?? '', phone: pendingValues?.phone ?? '', email: pendingValues?.email }}
+        onConfirmNotSame={handleConfirmNotSame}
+      />
+    </>
   );
 };

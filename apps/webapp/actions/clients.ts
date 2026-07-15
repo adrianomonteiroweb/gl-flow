@@ -3,7 +3,15 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
-import { ClientRepository, PipelineRepository, StepRepository, StatusRepository, NegotiationRepository, TaskRepository, VehicleModelRepository } from '@workspace/db';
+import {
+  ClientRepository,
+  PipelineRepository,
+  StepRepository,
+  StatusRepository,
+  NegotiationRepository,
+  TaskRepository,
+  VehicleModelRepository,
+} from '@workspace/db';
 import { onlyNumbers, isCpf } from '@workspace/utils/text';
 import { GetLeadParams, LeadRepository } from '@/repositories/LeadRepository';
 import { isLeadScopeRestricted, canAccessSettings, canAssignLeads } from '@/lib/auth/permissions';
@@ -151,10 +159,7 @@ export const lookupCompanyByCnpj = async (cnpj: string) => {
       return { status: 400, message: 'CNPJ deve ter 14 dígitos.' };
     }
 
-    const [existingClient, company] = await Promise.all([
-      ClientRepository.findByDocument(workspaceId, digits),
-      fetchCompanyByCnpj(digits),
-    ]);
+    const [existingClient, company] = await Promise.all([ClientRepository.findByDocument(workspaceId, digits), fetchCompanyByCnpj(digits)]);
 
     if (!existingClient && !company) {
       console.warn(`CNPJ não encontrado: ${digits}`);
@@ -498,17 +503,13 @@ const createInitialNegotiation = async (
   if (!pipeline) return;
 
   const step = await StepRepository.findAll().then(steps =>
-    steps.find(
-      s => s.workspace_id === workspaceId && s.slug === 'prospeccao' && !s.deleted_at
-    )
+    steps.find(s => s.workspace_id === workspaceId && s.slug === 'prospeccao' && !s.deleted_at)
   );
 
   if (!step) return;
 
   const status = await StatusRepository.findAll().then(statuses =>
-    statuses.find(
-      s => s.workspace_id === workspaceId && s.slug === 'novo' && !s.deleted_at
-    )
+    statuses.find(s => s.workspace_id === workspaceId && s.slug === 'novo' && !s.deleted_at)
   );
 
   if (!status) return;
@@ -757,9 +758,7 @@ export async function createNegotiationForClient(data: unknown) {
     });
 
     const existingNegotiations = await NegotiationRepository.findByClient(workspaceId, client.id);
-    const hasOpenInPipeline = existingNegotiations.some(
-      (n: any) => n.pipeline_id === pipeline.id && !n.won_at && !n.lost_at
-    );
+    const hasOpenInPipeline = existingNegotiations.some((n: any) => n.pipeline_id === pipeline.id && !n.won_at && !n.lost_at);
 
     if (!hasOpenInPipeline) {
       await NegotiationRepository.create({
@@ -779,9 +778,7 @@ export async function createNegotiationForClient(data: unknown) {
               payload: { vehicle_model: vehicleModelSummary, ...(proposalPayload ? { proposal: proposalPayload } : {}) },
             }
           : {}),
-        ...(proposalPayload
-          ? { discount: String(proposalPayload.discount ?? 0), negotiation_value: String(proposalPayload.total ?? 0) }
-          : {}),
+        ...(proposalPayload ? { discount: String(proposalPayload.discount ?? 0), negotiation_value: String(proposalPayload.total ?? 0) } : {}),
       });
     }
 
@@ -813,6 +810,60 @@ export async function createNegotiationForClient(data: unknown) {
   } catch (error: unknown) {
     console.error('Erro ao criar negociação:', error);
     return { success: false, message: 'Ocorreu um erro inesperado. Tente novamente.' };
+  }
+}
+
+const FindExistingClientsSchema = z.object({
+  phone: z.string().optional().or(z.literal('')),
+  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+});
+
+// Normaliza o telefone para dígitos locais (10/11), removendo o DDI 55 quando presente.
+const canonicalPhoneDigits = (phone: string): string | undefined => {
+  let digits = onlyNumbers(phone);
+
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55')) {
+    digits = digits.slice(2);
+  }
+
+  return digits.length >= 10 ? digits : undefined;
+};
+
+// Verifica se o contato do lead já pertence a um cliente importado (source='integration'),
+// casando por telefone OU e-mail. Usado no Cadastro Rápido antes de criar o lead.
+export async function findExistingClientsForLead(input: unknown) {
+  try {
+    const me = await getMe();
+
+    if (!me) {
+      return { success: false, message: 'Usuário não autenticado' };
+    }
+
+    const workspaceId = await resolveWorkspaceId(me);
+
+    if (!workspaceId) {
+      return { success: false, message: 'Workspace não encontrado.' };
+    }
+
+    const parsed = FindExistingClientsSchema.safeParse(input);
+
+    if (!parsed.success) {
+      return { success: false, message: parsed.error.errors[0]?.message ?? 'Dados inválidos' };
+    }
+
+    const phoneDigits = parsed.data.phone ? canonicalPhoneDigits(parsed.data.phone) : undefined;
+    const email = parsed.data.email ? parsed.data.email.trim() : undefined;
+
+    if (!phoneDigits && !email) {
+      return { success: true, data: [] };
+    }
+
+    const matches = await ClientRepository.findClientsByContact(workspaceId, { phoneDigits, email });
+
+    return { success: true, data: matches };
+  } catch (error: unknown) {
+    console.error('Erro ao verificar clientes existentes:', error);
+    return { success: false, message: 'Ocorreu um erro ao verificar clientes existentes.' };
   }
 }
 
@@ -1063,11 +1114,7 @@ export async function getClientPipelineStatus(leadId: string) {
     const { lead, chat } = ticket;
     const canInactivate = isLeadResolved(lead);
 
-    const stepLabel = lead.won_at
-      ? 'Ganho'
-      : lead.lost_at
-        ? 'Perdido'
-        : (chat?.step_name ?? getStepLabel(chat?.step ?? ''));
+    const stepLabel = lead.won_at ? 'Ganho' : lead.lost_at ? 'Perdido' : (chat?.step_name ?? getStepLabel(chat?.step ?? ''));
 
     const statusLabel = chat?.status_name ?? getStatusLabel(chat?.status ?? '');
 

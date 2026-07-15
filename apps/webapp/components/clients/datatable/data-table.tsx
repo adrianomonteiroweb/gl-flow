@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from '@/hooks/use-search-params';
 import useServerPaginationTable from '@/hooks/use-server-pagination-table';
 import { getClients } from '@/actions/clients';
-import { CreateClientButton } from '@/components/clients/create-button';
+import { QuickLeadButton } from '@/components/leads/quick-lead-button';
 import { PendingClientsList } from '@/components/clients/pending-clients-list';
 import { OfflineIndicator } from '@/components/commons/offline-indicator';
 import { ClientsEmptyState } from '@/components/clients/clients-empty-state';
@@ -92,11 +92,17 @@ export function ClientsDataTable({ mode = 'leads' }: ClientsDataTableProps) {
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <OfflineIndicator />
         </div>
-        {isLeadsMode && <CreateClientButton label="Novo Lead" />}
+        {isLeadsMode && <QuickLeadButton label="Novo Lead" />}
       </div>
 
       <DataTableToolbar
-        actionSlot={isLeadsMode ? <div className="lg:hidden"><CreateClientButton label="Novo Lead" /></div> : undefined}
+        actionSlot={
+          isLeadsMode ? (
+            <div className="lg:hidden">
+              <QuickLeadButton label="Novo Lead" />
+            </div>
+          ) : undefined
+        }
         showTypeFilter={isLeadsMode}
       />
 

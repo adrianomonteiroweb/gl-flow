@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { CloudOff, RotateCcw, WifiOff } from 'lucide-react';
+import { CloudOff, WifiOff } from 'lucide-react';
 
 import { onlyNumbers } from '@workspace/utils/text';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@workspace/ui/components/dialog';
@@ -33,10 +33,10 @@ const DEFAULT_VALUES: QuickLeadValues = { name: '', email: '', phone: '' };
 
 export const QuickLeadModal = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, loading } = useSessionContext();
   const { is_online, addQuickLeadToQueue } = useOfflineSyncContext();
   const [open, setOpen] = useState(false);
-  const [resetNonce, setResetNonce] = useState(0);
   const [matches, setMatches] = useState<MatchedClient[]>([]);
   const [matchOpen, setMatchOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<QuickLeadValues | null>(null);
@@ -68,26 +68,12 @@ export const QuickLeadModal = () => {
     };
   }, [form]);
 
-  // Resets in a committed effect (decoupled from handleSubmit's async continuation),
-  // which is the reliable RHF pattern for clearing a form after an async submit.
-  useEffect(() => {
-    if (resetNonce > 0) {
-      form.reset(DEFAULT_VALUES);
-      form.setFocus('name');
-    }
-  }, [resetNonce, form]);
-
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
 
     if (!next) {
       form.reset(DEFAULT_VALUES);
     }
-  };
-
-  const handleClearFields = () => {
-    form.reset(DEFAULT_VALUES);
-    form.setFocus('name');
   };
 
   const runCreate = async (values: QuickLeadValues) => {
@@ -101,7 +87,8 @@ export const QuickLeadModal = () => {
     toast.success('Lead cadastrado.');
     document.dispatchEvent(new Event('leads:updated'));
     document.dispatchEvent(new Event('clients:updated'));
-    setResetNonce(n => n + 1);
+    setOpen(false);
+    router.push('/pipelines');
   };
 
   const onSubmit = async (values: QuickLeadValues) => {
@@ -111,7 +98,8 @@ export const QuickLeadModal = () => {
       toast.success('Lead salvo localmente. Será sincronizado ao reconectar.');
       document.dispatchEvent(new Event('leads:updated'));
       document.dispatchEvent(new Event('clients:updated'));
-      setResetNonce(n => n + 1);
+      setOpen(false);
+      router.push('/pipelines');
       return;
     }
 
@@ -206,26 +194,20 @@ export const QuickLeadModal = () => {
                 )}
               />
 
-              <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
-                <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={handleClearFields}>
-                  <RotateCcw className="h-4 w-4" />
-                  Limpar
+              <DialogFooter className="flex items-center justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
+                  Cancelar
                 </Button>
-                <div className="flex items-center gap-2 sm:ml-auto">
-                  <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
-                    Cancelar
-                  </Button>
-                  <SubmitButton isSubmitting={form.formState.isSubmitting} className="whitespace-nowrap">
-                    {!is_online ? (
-                      <>
-                        <CloudOff size={14} className="mr-1.5 shrink-0" aria-hidden="true" />
-                        Salvar offline
-                      </>
-                    ) : (
-                      'Cadastrar'
-                    )}
-                  </SubmitButton>
-                </div>
+                <SubmitButton isSubmitting={form.formState.isSubmitting} className="whitespace-nowrap">
+                  {!is_online ? (
+                    <>
+                      <CloudOff size={14} className="mr-1.5 shrink-0" aria-hidden="true" />
+                      Salvar offline
+                    </>
+                  ) : (
+                    'Cadastrar'
+                  )}
+                </SubmitButton>
               </DialogFooter>
             </form>
           </Form>

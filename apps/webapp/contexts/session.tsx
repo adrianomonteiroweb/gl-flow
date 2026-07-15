@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { verifyLoginCode } from '@/actions/auth';
+import { loginWithPassword } from '@/actions/auth';
 import { AppLoading } from '@/components/commons/loading';
 import { getMe } from '@/actions/users';
 import { SignIn } from '@/components/auth/signin';
@@ -15,7 +15,7 @@ type Props = {
 type ProviderValue = {
   user: any;
   loading: boolean;
-  handleAuthentication: (email: string, code: string) => Promise<any>;
+  handleAuthentication: (email: string, password: string) => Promise<any>;
 };
 
 const SessionContext = createContext<ProviderValue | undefined>(undefined);
@@ -27,7 +27,7 @@ export function SessionProvider({ children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const publicRoutes = ['/login', '/privacy-policy', '/invite'];
+  const publicRoutes = ['/login', '/privacy-policy', '/invite', '/forgot-password', '/reset-password'];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
   useEffect(() => {
@@ -66,16 +66,16 @@ export function SessionProvider({ children }: Props) {
     }
   }, [mounted, loading, user, pathname, router]);
 
-  const handleAuthentication = async (email: string, code: string) => {
+  const handleAuthentication = async (email: string, password: string) => {
     try {
-      const { user, status } = await verifyLoginCode(email, code);
+      const result = await loginWithPassword(email, password);
 
-      if (status === 200 || status === 201) {
-        setUser(user);
+      if (result.status === 200 || result.status === 201) {
+        setUser(result.user);
         router.push('/dashboard');
       }
 
-      return { status };
+      return result;
     } catch (error) {
       console.error('Authentication error:', error);
       return { status: 500 };

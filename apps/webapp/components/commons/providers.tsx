@@ -21,7 +21,7 @@ export function Providers({ children }: ProvidersProps) {
   const [mounted, setMounted] = React.useState(false);
   const pathname = usePathname();
 
-  const publicRoutes = ['/login', '/privacy-policy', '/invite'];
+  const publicRoutes = ['/login', '/privacy-policy', '/invite', '/forgot-password', '/reset-password'];
   const isBareLayout = publicRoutes.some(route => pathname.startsWith(route));
 
   React.useEffect(() => {

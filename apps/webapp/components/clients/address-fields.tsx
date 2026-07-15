@@ -58,7 +58,7 @@ export const AddressFields = ({ pathPrefix, disabled = false, online = true, aut
           form.setValue(fieldName('neighborhood'), result.neighborhood, { shouldValidate: true });
         }
 
-        if (!current?.city && result.city) {
+        if (!current?.city && result.city && !/^\d+$/.test(result.city)) {
           form.setValue(fieldName('city'), result.city, { shouldValidate: true });
         }
 

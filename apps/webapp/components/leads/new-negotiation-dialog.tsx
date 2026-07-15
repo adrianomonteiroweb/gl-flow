@@ -45,12 +45,14 @@ const STEP_WIDTH: Record<WizardStep, string> = {
 interface NewNegotiationDialogProps {
   trigger?: React.ReactNode;
   initialVehicle?: VehicleModel;
+  /** Cliente já conhecido: abre o fluxo direto na etapa Veículo, pulando a busca de cliente. */
+  initialClient?: WizardClient;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onCreated?: () => void;
 }
 
-export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlledOpen, onOpenChange: controlledOnOpenChange, onCreated }: NewNegotiationDialogProps) => {
+export const NewNegotiationDialog = ({ trigger, initialVehicle, initialClient, open: controlledOpen, onOpenChange: controlledOnOpenChange, onCreated }: NewNegotiationDialogProps) => {
   const { is_online, addNegotiationToQueue } = useOfflineSyncContext();
   const is_mobile = useIsMobile();
 
@@ -85,6 +87,12 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
   useEffect(() => {
     if (open) {
       setSelectedVehicle(initialVehicle ?? null);
+
+      // Cliente já conhecido: pula a etapa de busca e começa na seleção do veículo.
+      if (initialClient) {
+        setSelectedClient(initialClient);
+        setStep('vehicle');
+      }
     } else {
       setStep('client');
       setQuery('');
@@ -101,7 +109,7 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
       setPayments([]);
       setApprovalStatus('idle');
     }
-  }, [open, initialVehicle]);
+  }, [open, initialVehicle, initialClient]);
 
   useEffect(() => {
     if (!is_online || !open || step !== 'client') {
@@ -410,6 +418,8 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
 
   const showEmptyState = hasSearched && clients.length === 0 && !isSearching;
   const isClientOrVehicle = step === 'client' || step === 'vehicle';
+  // Sem etapa de cliente (cliente pré-selecionado), "Voltar" na etapa Veículo fecha o fluxo.
+  const vehicleBackGoesToClient = step === 'vehicle' && !initialClient;
 
   return (
     <>
@@ -640,9 +650,9 @@ export const NewNegotiationDialog = ({ trigger, initialVehicle, open: controlled
           {isClientOrVehicle && (
             <div className="shrink-0 border-t px-6 py-2 sm:py-4">
               <div className="flex items-center justify-between gap-2">
-                <Button type="button" variant="outline" className="gap-1.5" onClick={() => (step === 'vehicle' ? setStep('client') : setOpen(false))} disabled={isSubmitting}>
+                <Button type="button" variant="outline" className="gap-1.5" onClick={() => (vehicleBackGoesToClient ? setStep('client') : setOpen(false))} disabled={isSubmitting}>
                   <ArrowLeft className="h-4 w-4" />
-                  {step === 'vehicle' ? 'Voltar' : 'Cancelar'}
+                  {vehicleBackGoesToClient ? 'Voltar' : 'Cancelar'}
                 </Button>
                 {step === 'vehicle' && (
                   <Button type="button" onClick={() => setStep('proposal')} disabled={!selectedVehicle} className="flex-1 gap-1.5 sm:flex-none">

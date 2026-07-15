@@ -13,6 +13,9 @@ const BRASIL_API_HEADERS = {
   'User-Agent': 'linharesflow/1.0',
 };
 
+/** Alguns provedores de CEP devolvem um código numérico no lugar do nome da cidade. */
+const isNumericCity = (value?: string): boolean => !!value && /^\d+$/.test(value.trim());
+
 const fetchFromBrasilApi = async (cleanZip: string, version: 'v1' | 'v2'): Promise<BrasilApiAddress | null> => {
   try {
     const res = await fetch(`https://brasilapi.com.br/api/cep/${version}/${cleanZip}`, {
@@ -26,6 +29,11 @@ const fetchFromBrasilApi = async (cleanZip: string, version: 'v1' | 'v2'): Promi
     const data = (await res.json()) as Record<string, string>;
 
     if (!data.city && !data.street && !data.neighborhood) {
+      return null;
+    }
+
+    // Provedor devolveu um código no campo cidade: descarta para a cascata tentar o próximo.
+    if (isNumericCity(data.city)) {
       return null;
     }
 
@@ -59,6 +67,10 @@ const fetchFromViaCep = async (cleanZip: string): Promise<BrasilApiAddress | nul
     };
 
     if (data.erro) {
+      return null;
+    }
+
+    if (isNumericCity(data.localidade)) {
       return null;
     }
 
@@ -182,7 +194,8 @@ export const fetchCompanyByCnpj = async (cnpj: string): Promise<BrasilApiCompany
       return null;
     }
 
-    const municipio = capitalize(String(data.municipio ?? '').trim());
+    const municipioRaw = String(data.municipio ?? '').trim();
+    const municipio = isNumericCity(municipioRaw) ? '' : capitalize(municipioRaw);
     const uf = String(data.uf ?? '')
       .trim()
       .toUpperCase();

@@ -1,14 +1,8 @@
-'use client';
-
 import { LinharesLogo } from '@workspace/ui/components/logos/linhares';
 
-import { PasswordForm } from '@/components/auth/password-form';
+import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 
-export function SignIn({
-  handleAuthentication,
-}: {
-  handleAuthentication: (email: string, password: string) => Promise<{ status: number; [key: string]: unknown }>;
-}) {
+export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted p-4">
       <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-sm sm:p-8 space-y-8">
@@ -17,11 +11,11 @@ export function SignIn({
         </div>
 
         <div className="flex flex-col space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Área Restrita</h1>
-          <p className="text-sm text-muted-foreground">Acesse sua conta com e-mail e senha</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Recuperar senha</h1>
+          <p className="text-sm text-muted-foreground">Informe seu e-mail para receber as instruções de redefinição</p>
         </div>
 
-        <PasswordForm onSubmit={handleAuthentication} />
+        <ForgotPasswordForm />
       </div>
     </div>
   );

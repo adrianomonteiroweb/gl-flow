@@ -9,8 +9,6 @@ import { DateFormatter } from '@workspace/utils';
 import { Switch } from '@workspace/ui/components/switch';
 import { Button } from '@workspace/ui/components/button';
 import { Dialog, DialogContent } from '@workspace/ui/components/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@workspace/ui/components/alert-dialog';
-
 import { updateLeadVehicleInterest } from '@/actions/leads';
 import { getClient } from '@/actions/clients';
 import { completeLeadEnrichmentTask } from '@/actions/tasks';
@@ -18,8 +16,6 @@ import { maritalStatusLabel } from '@/lib/clients/marital-status';
 import { ClientEditForm } from '@/components/clients/client-edit-form';
 import { ClientDialogForm, type ClientDialogResult } from '@/components/clients/dialog-form';
 import type { ClientFormValues } from '@/components/clients/client-form-schema';
-import { NewNegotiationDialog } from '@/components/leads/new-negotiation-dialog';
-import type { WizardClient } from '@/components/leads/negotiation-wizard/types';
 
 interface LeadVehicleInterestProps {
   leadId: string;
@@ -95,17 +91,9 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadNam
   const [editOpen, setEditOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  // formKey increments only on explicit cancel/save to remount the form with fresh defaults.
   const [formKey, setFormKey] = useState(0);
-  // Holds form values captured when the dialog is dismissed via X/backdrop/Escape,
-  // so the next open rehydrates what the user had typed.
   const [capturedValues, setCapturedValues] = useState<ClientFormValues | null>(null);
   const getValuesRef = useRef<(() => ClientFormValues) | null>(null);
-  // After the client's registration is completed, offer to continue with a
-  // negotiation — the wizard opens straight on the vehicle step.
-  const [pendingNegotiationClient, setPendingNegotiationClient] = useState<WizardClient | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [negotiationOpen, setNegotiationOpen] = useState(false);
 
   useEffect(() => {
     if (!vehicleInterest || !clientId) {
@@ -163,29 +151,12 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadNam
     setEditOpen(isOpen);
   };
 
-  // Offers a negotiation once the client has a document (registration completed).
-  const offerNegotiation = (completedClient: Record<string, any> | null) => {
-    if (!completedClient?.document) {
-      return;
-    }
-
-    setPendingNegotiationClient({
-      id: String(completedClient.id),
-      name: String(completedClient.name),
-      document: completedClient.document ?? null,
-      phone: completedClient.phone ?? null,
-      email: completedClient.email ?? null,
-    });
-    setConfirmOpen(true);
-  };
-
   const handleSaved = (savedClient: Record<string, any>) => {
     setCapturedValues(null);
     setClient(savedClient);
     setEditOpen(false);
     setFormKey(k => k + 1);
     completeLeadEnrichmentTask(leadId);
-    offerNegotiation(savedClient);
   };
 
   const handleCancel = () => {
@@ -209,12 +180,6 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadNam
     }
 
     completeLeadEnrichmentTask(leadId);
-    offerNegotiation(linkedClient);
-  };
-
-  const handleConfirmNegotiation = () => {
-    setConfirmOpen(false);
-    setNegotiationOpen(true);
   };
 
   return (
@@ -268,22 +233,6 @@ export const LeadVehicleInterest = ({ leadId, vehicleInterest, clientId, leadNam
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Iniciar uma negociação?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cadastro de {pendingNegotiationClient?.name} concluído. Deseja seguir com uma nova negociação agora?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Agora não</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmNegotiation}>Iniciar negociação</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <NewNegotiationDialog open={negotiationOpen} onOpenChange={setNegotiationOpen} initialClient={pendingNegotiationClient ?? undefined} />
     </div>
   );
 };

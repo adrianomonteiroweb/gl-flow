@@ -2,17 +2,21 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams as useNextSearchParams } from 'next/navigation';
-import { Mail, Phone, Info, History, User, MapPinIcon, ClipboardCheck, type LucideIcon } from 'lucide-react';
+import { Mail, Phone, Info, History, User, MapPinIcon, ClipboardCheck, Handshake, type LucideIcon } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@workspace/ui/components/avatar';
+import { Button } from '@workspace/ui/components/button';
 import { ScrollArea } from '@workspace/ui/components/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@workspace/ui/components/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@workspace/ui/components/tooltip';
 import { cn } from '@workspace/ui/lib/utils';
 import { AddressData } from '@/repositories/types';
+import { getClient } from '@/actions/clients';
 import { getLeadTasks } from '@/actions/tasks';
 import { getLeadTaskAlert, leadTaskAlertConfig, type TaskLike } from '@/utils/task-status';
 
+import { NewNegotiationDialog } from './new-negotiation-dialog';
+import type { WizardClient } from './negotiation-wizard/types';
 import { LeadInfoField } from './lead-info-field';
 import { LeadAddressSection } from './lead-address-section';
 import { LeadDetailedInfo } from './lead-detailed-info';
@@ -55,6 +59,8 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
   const [activeTab, setActiveTab] = useState(initialTab);
   const [leadData, setLeadData] = useState(lead);
   const [taskAlert, setTaskAlert] = useState<ReturnType<typeof getLeadTaskAlert>>(null);
+  const [negotiationOpen, setNegotiationOpen] = useState(false);
+  const [wizardClient, setWizardClient] = useState<WizardClient | null>(null);
 
   const handleTasksChanged = useCallback((tasks: TaskLike[]) => {
     setTaskAlert(getLeadTaskAlert(tasks));
@@ -109,6 +115,35 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
     onLeadChange?.({ kind: 'address', field: fieldType, value: newValue });
   };
 
+  const handleOpenNegotiation = async () => {
+    const clientId = (leadData?.payload as Record<string, unknown>)?.client_id as string | null;
+
+    if (clientId) {
+      const result = await getClient(clientId);
+
+      if (result.success && result.data) {
+        const c = result.data as Record<string, any>;
+        setWizardClient({
+          id: String(c.id),
+          name: String(c.name),
+          document: c.document ?? null,
+          phone: c.phone ?? null,
+          email: c.email ?? null,
+        });
+      }
+    }
+
+    setNegotiationOpen(true);
+  };
+
+  const handleNegotiationOpenChange = (open: boolean) => {
+    setNegotiationOpen(open);
+
+    if (!open) {
+      setWizardClient(null);
+    }
+  };
+
   const handleLossReasonSuccess = (lossReason: string | null) => {
     setLeadData((prev: any) => ({ ...prev, loss_reason: lossReason }));
     onLeadChange?.({ kind: 'loss_reason', value: lossReason });
@@ -129,13 +164,19 @@ export const LeadDetailsContent = ({ lead, chatId, variant = 'sidebar', defaultT
 
   return (
     <div className="flex h-full flex-col">
+      <NewNegotiationDialog open={negotiationOpen} onOpenChange={handleNegotiationOpenChange} initialClient={wizardClient ?? undefined} />
+
       <div className={cn('shrink-0', sidePadding, topPadding)}>
         <div className="space-y-3">
           <Avatar className="mx-auto h-16 w-16 md:h-20 md:w-20">
             <AvatarFallback className="bg-primary text-primary-foreground text-lg">{leadInitials}</AvatarFallback>
           </Avatar>
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <h3 className="text-xl font-semibold">{leadName}</h3>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={handleOpenNegotiation}>
+              <Handshake className="h-4 w-4" />
+              Nova Negociação
+            </Button>
           </div>
         </div>
       </div>

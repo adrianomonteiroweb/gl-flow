@@ -128,11 +128,6 @@ export const LeadCardContent = forwardRef<HTMLDivElement, LeadCardContentProps>(
           <LeadAssigneeControl leadId={item.lead.id} assignee={item.assignee ?? null} onUpdated={onUpdated} />
         </div>
 
-        <div className="mb-2.5 flex items-center justify-between gap-2">
-          <span className="flex-shrink-0 whitespace-nowrap rounded bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{statusLabel}</span>
-          <span className="truncate text-[11px] text-muted-foreground">{item.chat?.updated_at ? DateFormatter.dateTime(item.chat.updated_at) : '—'}</span>
-        </div>
-
         <div className="flex items-center gap-2" onClick={stop} onPointerDown={stop}>
           {showMoveMenu && (
             <StageMoveMenu

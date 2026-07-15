@@ -325,7 +325,7 @@ export function LeadsContainer() {
             <span className="lg:hidden">Novo</span>
           </Button>
 
-          {canDistribute && (
+          {/* {canDistribute && (
             <DistributeDialog
               onDone={fetchKanbanData}
               trigger={
@@ -336,7 +336,7 @@ export function LeadsContainer() {
                 </Button>
               }
             />
-          )}
+          )} */}
 
           <Button
             type="button"

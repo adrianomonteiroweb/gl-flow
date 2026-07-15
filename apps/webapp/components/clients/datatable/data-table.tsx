@@ -19,6 +19,7 @@ interface ClientsDataTableProps {
 export function ClientsDataTable({ mode = 'leads' }: ClientsDataTableProps) {
   const [response, setResponse] = useState({ data: [], status: 200, count: 0 });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<boolean>(false);
   const { params } = useSearchParams();
 
   const isLeadsMode = mode === 'leads';
@@ -30,11 +31,13 @@ export function ClientsDataTable({ mode = 'leads' }: ClientsDataTableProps) {
   const type = (params.type as 'all' | 'quick_lead' | 'complete') || 'all';
 
   const fetchData = useCallback(async () => {
-    if (!navigator.onLine) {
+    if (!navigator.onLine && !isLeadsMode) {
+      setError(true);
       return;
     }
 
     setLoading(true);
+    setError(false);
 
     try {
       const res = await getClients({
@@ -47,8 +50,11 @@ export function ClientsDataTable({ mode = 'leads' }: ClientsDataTableProps) {
       });
 
       setResponse(res as any);
-    } catch (error) {
-      console.error('Erro ao carregar registros:', error);
+      setError(false);
+    } catch (err) {
+      console.error('Erro ao carregar registros:', err);
+      setError(true);
+      setResponse({ data: [], status: 500, count: 0 });
     } finally {
       setLoading(false);
     }
@@ -70,7 +76,14 @@ export function ClientsDataTable({ mode = 'leads' }: ClientsDataTableProps) {
   });
 
   const title = isLeadsMode ? 'Leads' : 'Clientes';
-  const emptyMessage = isLeadsMode ? 'Nenhum lead encontrado.' : <ClientsEmptyState />;
+
+  let emptyMessage: React.ReactNode;
+  if (isLeadsMode) {
+    emptyMessage = 'Nenhum lead encontrado.';
+  } else {
+    const emptyStateType = error ? 'error' : 'no-integration';
+    emptyMessage = <ClientsEmptyState type={emptyStateType} onRetry={error ? fetchData : undefined} />;
+  }
 
   return (
     <div className="space-y-4">
